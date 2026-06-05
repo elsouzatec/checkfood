@@ -1,0 +1,47 @@
+# ── CheckFood / PagFood — .gitignore raiz do monorepo ──
+
+# Segredos / ambiente (NUNCA versionar)
+.env
+.env.*
+!.env.example
+*.env.bak-*
+
+# Chaves privadas / certificados
+deploy/certs/*.key
+*.key
+*.pem
+
+# Dependências
+/api/vendor/
+vendor/
+node_modules/
+
+# Artefatos de build do frontend (servidos direto pelo nginx; regeráveis com npm run build)
+dist/
+
+# Laravel — caches e storage
+/api/storage/*.key
+/api/storage/logs/*.log
+/api/storage/logs/*.log.gz
+/api/storage/framework/cache/data/*
+/api/bootstrap/cache/*.php
+
+# Logs em geral
+*.log
+*.log.gz
+
+# Caches de teste
+.phpunit.result.cache
+/api/.phpunit.cache
+
+# Config local do Claude Code
+.claude/settings.local.json
+
+# Sistema operacional / editores
+.DS_Store
+Thumbs.db
+/.idea
+/.vscode
+/.fleet
+/.zed
+*.swp

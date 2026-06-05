@@ -1,0 +1,211 @@
+@import '@shared/tokens.css';
+@import '@shared/reset.css';
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+@import '@shared/buttons.css';
+@import '@shared/forms.css';
+@import '@shared/badges.css';
+@import '@shared/states.css';
+
+/* ============================================================
+   PagFood · App PLATAFORMA (Super Admin)
+   Reaproveita os tokens --admin-* (tema escuro por padrão).
+============================================================ */
+
+:root { --plat-accent: var(--brand-accent, #f39c12); }
+
+*::-webkit-scrollbar          { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track    { background: var(--admin-scroll-track); }
+*::-webkit-scrollbar-thumb    { background: var(--admin-scroll-thumb); border-radius: 5px; }
+
+body {
+  background: var(--admin-bg-primary);
+  color: var(--admin-text-primary);
+  min-height: 100vh;
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+.platform-layout { display: flex; min-height: 100vh; }
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 230px;
+  background: var(--sidebar-bg, var(--admin-bg-secondary));
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  border-right: 1px solid var(--admin-border);
+}
+.sidebar-header {
+  padding: 20px 18px;
+  border-bottom: 1px solid var(--admin-border);
+}
+.sidebar-header .logo {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--plat-accent);
+  letter-spacing: -0.5px;
+}
+.role-badge {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--admin-text-muted);
+}
+.sidebar-nav { flex: 1; padding: 12px 0; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  color: var(--admin-text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  border-left: 3px solid transparent;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.nav-item:hover { background: var(--admin-bg-hover); color: var(--admin-text-primary); }
+.nav-item.active {
+  background: var(--admin-bg-hover);
+  color: var(--plat-accent);
+  border-left-color: var(--plat-accent);
+}
+.nav-icon { font-size: 18px; }
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--admin-border);
+}
+.user-info { display: flex; flex-direction: column; margin-bottom: 10px; }
+.user-name { font-weight: 700; color: var(--admin-text-primary); }
+.user-role-text { font-size: 12px; color: var(--admin-text-muted); }
+
+/* ── Conteúdo ── */
+.main-content {
+  margin-left: 230px;
+  flex: 1;
+  padding: 28px 32px;
+  max-width: 1100px;
+}
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+.page-title { font-size: 26px; font-weight: 800; color: var(--admin-text-primary); }
+.page-subtitle { color: var(--admin-text-muted); font-size: 14px; margin-top: 2px; }
+
+/* ── Cards / KPIs ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.kpi-card {
+  background: var(--admin-bg-card);
+  border: 1px solid var(--admin-border);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+.kpi-value { font-size: 30px; font-weight: 800; color: var(--admin-text-primary); font-variant-numeric: tabular-nums; }
+.kpi-label { font-size: 13px; color: var(--admin-text-muted); margin-top: 4px; }
+.kpi-value.danger { color: var(--danger, #e74c3c); }
+.kpi-value.ok { color: var(--c-leaf-500, #27ae60); }
+
+.card {
+  background: var(--admin-bg-card);
+  border: 1px solid var(--admin-border);
+  border-radius: 14px;
+  padding: 22px;
+  margin-bottom: 20px;
+}
+.card-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--admin-text-primary); }
+
+/* ── Tabela ── */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  text-align: left;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--admin-text-muted);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--admin-border);
+}
+.data-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--admin-border);
+  color: var(--admin-text-primary);
+}
+.data-table tr:hover td { background: var(--admin-table-hover); }
+.row-link { cursor: pointer; }
+
+/* ── Status pill ── */
+.pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.pill.green { background: var(--c-leaf-100, #d5f5e3); color: var(--c-leaf-800, #1e8449); }
+.pill.red   { background: #fdecea; color: #c0392b; }
+.pill.amber { background: #fff4e0; color: #b9770e; }
+
+/* ── Form ── */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
+.field label { font-size: 13px; font-weight: 600; color: var(--admin-text-secondary); }
+.field .hint { font-size: 12px; color: var(--admin-text-muted); }
+
+.form-actions { display: flex; gap: 12px; margin-top: 20px; }
+
+.alert {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+.alert.error { background: #fdecea; color: #c0392b; }
+.alert.success { background: var(--c-leaf-100, #d5f5e3); color: var(--c-leaf-800, #1e8449); }
+
+.link-back {
+  display: inline-block;
+  margin-bottom: 14px;
+  color: var(--admin-text-muted);
+  text-decoration: none;
+  font-size: 14px;
+}
+.link-back:hover { color: var(--plat-accent); }
+
+/* ── Login ── */
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--admin-bg-primary);
+  padding: 20px;
+}
+.login-card {
+  background: var(--admin-bg-card);
+  border: 1px solid var(--admin-border);
+  border-radius: 18px;
+  padding: 36px 32px;
+  width: 100%;
+  max-width: 380px;
+}
+.login-logo { font-size: 30px; font-weight: 800; color: var(--plat-accent); text-align: center; }
+.login-subtitle { text-align: center; color: var(--admin-text-muted); margin: 4px 0 26px; font-size: 14px; }
+
+.muted { color: var(--admin-text-muted); }
+.mono { font-variant-numeric: tabular-nums; }

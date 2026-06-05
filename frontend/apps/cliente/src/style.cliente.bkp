@@ -1,0 +1,271 @@
+@import '@shared/tokens.css';
+@import '@shared/reset.css';
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+@import '@shared/app-header.css';
+@import '@shared/buttons.css';
+@import '@shared/forms.css';
+@import '@shared/badges.css';
+@import '@shared/states.css';
+@import '@shared/fullscreen.css';
+
+/* ============================================================
+   PagFood · App CLIENTE (PWA via QR Code)
+============================================================ */
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-base);
+  background: var(--page-bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--page-bg);
+  position: relative;
+}
+
+/* ── Page wrapper ── */
+.page {
+  padding: 16px 16px 100px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ── Header global ── */
+.app-header {
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  border-bottom: 3px solid var(--sidebar-active-border);
+}
+.app-header h1 {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-black);
+  color: var(--sidebar-text);
+}
+.app-header .table-badge {
+  background: rgba(255, 255, 255, 0.18);
+  color: #FFFFFF;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+/* ── Tabs (Cardápio / Carrinho / Pedidos) ── */
+.tabs-nav {
+  display: flex;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-subtle);
+  position: sticky;
+  top: 52px;
+  z-index: 90;
+}
+.tabs-nav .tab {
+  flex: 1;
+  text-align: center;
+  padding: 12px 8px;
+  text-decoration: none;
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-md);
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  position: relative;
+  transition: color var(--dur-fast), border-color var(--dur-fast);
+}
+.tabs-nav .tab.active {
+  color: var(--brand-accent);
+  border-bottom-color: var(--brand-accent);
+}
+.tabs-nav .tab-badge {
+  position: absolute;
+  top: 4px;
+  margin-left: 6px;
+  background: var(--brand-accent);
+  color: #FFFFFF;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Botões ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+  transition: background var(--dur-normal), transform var(--dur-fast);
+  width: 100%;
+  font-family: var(--font-base);
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:active:not(:disabled) { transform: scale(0.98); }
+
+.btn-primary   { background: var(--brand-accent); color: var(--brand-accent-text); }
+.btn-primary:hover:not(:disabled) { background: var(--brand-accent-hover); }
+.btn-secondary { background: var(--gray-100); color: var(--text-secondary); }
+.btn-secondary:hover:not(:disabled) { background: var(--gray-200); }
+.btn-success   { background: var(--status-success-color); color: #fff; }
+.btn-danger    { background: var(--status-danger-color);  color: #fff; }
+.btn-sm        { padding: 8px 16px; font-size: var(--fs-sm); width: auto; }
+
+/* ── Cards ── */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+/* ── Formulários ── */
+.form-group { margin-bottom: 16px; }
+.form-group label {
+  display: block;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  background: var(--surface);
+  color: var(--text-primary);
+  outline: none;
+  font-family: var(--font-base);
+  transition: border-color var(--dur-fast);
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus { border-color: var(--brand-accent); }
+
+/* ── Mensagens de estado ── */
+.error-msg {
+  background: var(--status-pending-bg);
+  color: var(--status-pending-color);
+  border: 1px solid var(--status-pending-border);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  margin-bottom: 14px;
+}
+
+/* ── Badges de status do pedido ── */
+.order-status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: var(--fw-bold);
+}
+.status-pendente_validacao { background: var(--status-pending-bg);   color: var(--status-pending-color); }
+.status-confirmado         { background: var(--status-received-bg);  color: var(--status-received-color); }
+.status-preparando         { background: var(--status-preparing-bg); color: var(--status-preparing-color); }
+.status-pronto             { background: var(--status-ready-bg);     color: var(--status-ready-color); }
+.status-entregue           { background: var(--status-delivered-bg); color: var(--status-delivered-color); }
+.status-pago               { background: var(--gray-100);            color: var(--text-muted); }
+
+/* ── Estados ── */
+.loading     { text-align: center; padding: 40px;    color: var(--text-muted); }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state p { font-size: var(--fs-lg); margin-bottom: 20px; }
+
+/* ── Pagamento ── */
+.pay-accent { color: var(--brand-accent); }
+.pay-btn-pix {
+  background: var(--brand-accent);
+  color: var(--brand-accent-text);
+}
+
+/* ════════════════════════════════════════════
+   FULLSCREEN CENTER — login / boas-vindas
+   Mesmo padrão do garçom e cozinha.
+════════════════════════════════════════════ */
+.fullscreen-center {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+  background: var(--sidebar-bg);
+  color: #FFFFFF;
+}
+.fullscreen-center h2 {
+  font-size: var(--fs-2xl);
+  margin-bottom: 8px;
+  color: #FFFFFF;
+}
+.fullscreen-center p {
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 32px;
+  font-size: var(--fs-md);
+}
+.logo-text {
+  font-size: 34px;
+  font-weight: var(--fw-black);
+  color: var(--brand-accent);
+  margin-bottom: 24px;
+  letter-spacing: -0.5px;
+}
+
+/* Wrapper comum para o formulário de login */
+.login-form {
+  width: 100%;
+  max-width: 340px;
+}
+
+/* Inputs no fundo dark (login) ganham variante clara */
+.fullscreen-center .form-group label {
+  color: rgba(255, 255, 255, 0.85);
+  text-align: left;
+}
+.fullscreen-center .form-group input {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+}
+.fullscreen-center .form-group input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+.fullscreen-center .form-group input:focus {
+  border-color: var(--brand-accent);
+  background: rgba(255, 255, 255, 0.12);
+}
+.fullscreen-center .error-msg {
+  background: rgba(230, 57, 70, 0.2);
+  border-color: rgba(230, 57, 70, 0.4);
+  color: #FFB3B9;
+}

@@ -1,0 +1,160 @@
+/* ============================================================
+   PagFood — Shared Badges
+   Unifica .badge, .status-badge e .order-status-badge
+   que existiam como implementações paralelas nos 4 apps.
+
+   USO DE STATUS:
+     <span class="badge badge-status-preparando">Preparando</span>
+     <span class="badge badge-sm badge-status-pronto">Pronto</span>
+
+   USO DE UI:
+     <span class="badge badge-active">Ativo</span>
+     <span class="badge badge-accent">Destaque</span>
+
+   BADGE DE CONTAGEM (flutuante em cards de mesa):
+     <span class="badge-count">3</span>
+
+   ROLE BADGE (admin sidebar, header garçom):
+     <span class="role-badge">Garçom</span>
+============================================================ */
+
+/* ── Base ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  white-space: nowrap;
+  line-height: 1.4;
+  border: 1px solid transparent;
+}
+
+/* ── Tamanhos ── */
+.badge-sm { padding: 2px 8px;  font-size: 11px; }
+.badge-lg { padding: 5px 14px; font-size: var(--fs-sm); }
+
+/* ── Status de pedido ──
+   Nomenclatura espelha os valores do enum OrderStatus do backend. */
+.badge-status-pendente_validacao,
+.badge-status-pendente {
+  background: var(--status-pending-bg);
+  color: var(--status-pending-color);
+  border-color: var(--status-pending-border);
+}
+
+.badge-status-confirmado {
+  background: var(--status-received-bg);
+  color: var(--status-received-color);
+  border-color: var(--status-received-border);
+}
+
+.badge-status-preparando {
+  background: var(--status-preparing-bg);
+  color: var(--status-preparing-color);
+  border-color: var(--status-preparing-border);
+}
+
+.badge-status-pronto {
+  background: var(--status-ready-bg);
+  color: var(--status-ready-color);
+  border-color: var(--status-ready-border);
+}
+
+.badge-status-entregue {
+  background: var(--status-delivered-bg);
+  color: var(--status-delivered-color);
+  border-color: var(--status-delivered-border);
+}
+
+.badge-status-pago,
+.badge-status-cancelado {
+  background: var(--c-gray-100);
+  color: var(--text-muted);
+  border-color: var(--border-default);
+}
+
+/* ── Variantes de UI (não relacionadas a status de pedido) ── */
+.badge-active {
+  background: var(--status-ready-bg);
+  color: var(--status-ready-color);
+  border-color: var(--status-ready-border);
+}
+
+.badge-inactive {
+  background: var(--c-gray-100);
+  color: var(--text-muted);
+  border-color: var(--border-default);
+}
+
+.badge-accent {
+  background: var(--brand-accent-soft);
+  color: var(--brand-accent);
+  border-color: rgba(221, 111, 45, 0.25);
+}
+
+.badge-brand {
+  background: var(--brand-primary-soft);
+  color: var(--brand-primary);
+  border-color: rgba(40, 79, 10, 0.25);
+}
+
+.badge-info {
+  background: var(--status-delivered-bg);
+  color: var(--status-info-color);
+  border-color: var(--status-delivered-border);
+}
+
+.badge-danger {
+  background: var(--status-pending-bg);
+  color: var(--status-danger-color);
+  border-color: var(--status-pending-border);
+}
+
+.badge-warning {
+  background: var(--status-received-bg);
+  color: var(--status-received-color);
+  border-color: var(--status-received-border);
+}
+
+/* ── Role badge — sidebar admin, header garçom ── */
+.role-badge {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-accent);
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: var(--fw-black);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  line-height: 1.3;
+}
+
+/* Variante translúcida — usado no header do garçom (fundo verde) */
+.role-badge--subtle {
+  background: rgba(255, 255, 255, 0.18);
+  color: #FFFFFF;
+}
+
+/* ── Badge de contagem flutuante ──
+   Posicionar no elemento pai com position: relative. */
+.badge-count {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--status-danger-color);
+  color: #FFFFFF;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--surface);
+  box-shadow: 0 2px 6px rgba(230, 57, 70, 0.35);
+}

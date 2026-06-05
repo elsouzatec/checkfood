@@ -1,0 +1,110 @@
+/* ============================================================
+   PagFood — Shared Fullscreen
+   Padrão de tela centralizada fullscreen: login e boas-vindas.
+   Antes triplicado em cliente, garçom e cozinha. Agora centralizado.
+
+   USO:
+     <div class="fullscreen-center">          ← verde folha (padrão)
+     <div class="fullscreen-center fullscreen-center--kds">  ← verde escuro (cozinha)
+
+   ESTRUTURA ESPERADA:
+     <div class="fullscreen-center">
+       <div class="logo-text">PagFood</div>
+       <h2>Bem-vindo!</h2>
+       <p>Subtexto de contexto</p>
+       <div class="login-form">
+         <div class="login-toggle">...</div>      ← opcional
+         <div class="form-group form-group--dark">...</div>
+         <button class="btn btn-primary btn-block btn-lg">Entrar</button>
+       </div>
+     </div>
+
+   NOTA: inputs dentro de .fullscreen-center usam .form-group--dark
+   (definido em shared/forms.css). Não redefinir aqui.
+============================================================ */
+
+/* ── Layout base ── */
+.fullscreen-center {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+  background: var(--sidebar-bg);
+  color: #FFFFFF;
+}
+
+/* Variante cozinha — usa kds-bg (verde mais escuro) */
+.fullscreen-center--kds {
+  background: var(--kds-bg);
+}
+
+.fullscreen-center h2 {
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+  margin-bottom: 8px;
+  color: #FFFFFF;
+}
+
+.fullscreen-center p {
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 32px;
+  font-size: var(--fs-md);
+  line-height: 1.5;
+  max-width: 300px;
+}
+
+/* ── Logo textual ── */
+.logo-text {
+  font-size: 34px;
+  font-weight: var(--fw-black);
+  color: var(--brand-accent);
+  margin-bottom: 24px;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+/* ── Wrapper do formulário ── */
+.login-form {
+  width: 100%;
+  max-width: 340px;
+  text-align: left;
+}
+
+/* ── Toggle de modo (ex: telefone / apelido) ── */
+.login-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.20);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.70);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  font-family: var(--font-base);
+  text-align: center;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.toggle-btn:hover {
+  border-color: rgba(255, 255, 255, 0.40);
+  color: rgba(255, 255, 255, 0.90);
+}
+
+.toggle-btn.active {
+  border-color: var(--brand-accent);
+  background: rgba(221, 111, 45, 0.18);
+  color: #FFFFFF;
+}

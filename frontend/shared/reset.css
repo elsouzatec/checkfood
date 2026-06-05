@@ -1,0 +1,91 @@
+/* ============================================================
+   PagFood — Reset Global
+   Centraliza o que antes era duplicado em cada style.css de app.
+
+   IMPORTAR ANTES de qualquer outro CSS do app:
+     @import '@shared/tokens.css';
+     @import '@shared/reset.css';
+     @import '@shared/app-header.css';
+     ↑ nesta ordem
+
+   NÃO importar o reset mais de uma vez por app.
+============================================================ */
+
+/* ── Box model universal ── */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ── Renderização de fonte ── */
+html {
+  -webkit-text-size-adjust: 100%;   /* evita zoom automático em iOS ao focar input */
+  text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-base);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Elementos interativos ── */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+/* ── Imagens ── */
+img,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+/* ── Listas ── */
+ul,
+ol {
+  list-style: none;
+}
+
+/* ── Links ── */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ── Scrollbar — apenas nos apps com scroll visível (admin, cozinha) ──
+   Sobrescrita pelo style.css do app quando necessário. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-gray-300) transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--c-gray-300);
+  border-radius: var(--radius-pill);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--c-gray-500);
+}

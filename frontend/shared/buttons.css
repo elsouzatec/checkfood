@@ -1,0 +1,137 @@
+/* ============================================================
+   PagFood — Shared Buttons
+   Sistema unificado de botões para todos os 4 apps.
+
+   TAMANHOS:
+     .btn          → base (40px altura, inline)
+     .btn-lg       → ações primárias mobile (52px)
+     .btn-sm       → ações em tabelas / inline (32px)
+     .btn-block    → ocupa 100% da largura do container
+
+   VARIANTES SEMÂNTICAS:
+     .btn-primary      → laranja torrado (CTA principal)
+     .btn-brand        → verde folha (ação de identidade)
+     .btn-secondary    → neutro claro (ação secundária — apps light)
+     .btn-admin-secondary → neutro escuro (ação secundária — admin dark)
+     .btn-ghost        → transparente com borda (ação terciária)
+     .btn-danger       → vermelho (ação destrutiva)
+     .btn-success      → verde (confirmação)
+     .btn-warning      → âmbar (atenção)
+     .btn-info         → azul (informação)
+
+   UTILITÁRIOS:
+     .btn-spinner      → ícone de loading inline
+     .btn-group        → agrupa botões horizontalmente
+     .btn-group--end   → alinha grupo à direita
+============================================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-base);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    transform var(--dur-instant) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.btn:disabled        { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+.btn:active:not(:disabled) { transform: scale(0.97); }
+
+/* ── Tamanhos ── */
+.btn-lg    { padding: 14px 20px; font-size: var(--fs-md); font-weight: var(--fw-bold); }
+.btn-sm    { padding: 6px 12px;  font-size: var(--fs-xs); }
+.btn-block { width: 100%; }
+
+/* ── Variantes ── */
+.btn-primary { background: var(--brand-accent); color: var(--brand-accent-text); }
+.btn-primary:hover:not(:disabled) { background: var(--brand-accent-hover); }
+
+.btn-brand { background: var(--brand-primary); color: var(--brand-primary-text); }
+.btn-brand:hover:not(:disabled) { background: var(--brand-primary-hover); }
+
+.btn-secondary {
+  background: var(--c-gray-100);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--c-gray-200);
+  color: var(--text-primary);
+}
+
+/* Secundário para admin (dark theme) */
+.btn-admin-secondary {
+  background: var(--admin-bg-hover);
+  color: var(--admin-text-secondary);
+  border: 1px solid var(--admin-border);
+}
+.btn-admin-secondary:hover:not(:disabled) {
+  color: var(--admin-text-primary);
+  border-color: var(--admin-border-hover);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--surface-sunken);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.btn-danger  { background: var(--status-pending-bg);   color: var(--status-danger-color);   border: 1px solid var(--status-pending-border); }
+.btn-success { background: var(--status-ready-bg);     color: var(--status-ready-color);    border: 1px solid var(--status-ready-border); }
+.btn-warning { background: var(--status-received-bg);  color: var(--status-received-color); border: 1px solid var(--status-received-border); }
+.btn-info    { background: var(--status-delivered-bg); color: var(--status-info-color);     border: 1px solid var(--status-delivered-border); }
+
+.btn-danger:hover:not(:disabled)  { background: rgba(230, 57, 70,  0.18); }
+.btn-success:hover:not(:disabled) { background: rgba(42,  157, 143, 0.22); }
+.btn-warning:hover:not(:disabled) { background: rgba(233, 196, 106, 0.28); }
+.btn-info:hover:not(:disabled)    { background: rgba(69,  123, 157, 0.22); }
+
+/* ── Spinner de loading inline ──
+   Uso: <span class="btn-spinner"></span> dentro do .btn */
+.btn-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: btn-spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Grupo de botões ── */
+.btn-group {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.btn-group--end { justify-content: flex-end; }
+
+/* ── Alias legado (admin) — remover na Etapa 6 ── */
+.btn-force {
+  background: var(--status-received-bg);
+  color: var(--status-received-color);
+  border: 1px solid var(--status-received-border);
+}
+.btn-force:hover:not(:disabled) { background: rgba(233, 196, 106, 0.28); }

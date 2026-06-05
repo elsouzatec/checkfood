@@ -1,0 +1,311 @@
+/* ============================================================
+   PagFood — Design Tokens (fonte única de verdade visual)
+   Última revisão: Etapa 1 — Fundação
+
+   CAMADAS (análogo à "regra de ouro" das rotas do backend):
+     1. Primitives   → valores crus. NUNCA usar direto em componentes.
+     2. Semantic     → papéis/intenções (page-bg, text-primary, …).
+     3. Theme        → admin pode alternar entre dark/light via
+                       [data-theme="dark"|"light"] no <html>.
+     4. Component    → sidebar-*, status-*, brand-*, kds-*.
+     5. Typography / Radius / Shadow / Motion.
+
+   Componentes consomem camadas 2-5. Nunca pulam direto para a 1.
+============================================================ */
+
+:root {
+  /* ── 1. PRIMITIVES ─────────────────────────────────── */
+
+  /* Brand — verde folha (Amazônia)
+     Escala corrigida: 700 é o primary, 800 é o hover (mais escuro).
+     Bug anterior: leaf-700 e leaf-800 tinham o mesmo valor #284F0A. */
+  --c-leaf-950: #13240A;
+  --c-leaf-900: #1A330A;
+  --c-leaf-800: #22440A;   /* ★ hover — mais escuro que o primary */
+  --c-leaf-700: #284F0A;   /* ★ primary */
+  --c-leaf-500: #5A9635;
+  --c-leaf-300: #8BBD68;
+  --c-leaf-100: #DCEACC;
+
+  /* Accent — laranja torrado */
+  --c-orange-900: #8A3D14;
+  --c-orange-700: #C25D24;
+  --c-orange-500: #DD6F2D;   /* ★ accent */
+  --c-orange-300: #F0B088;
+  --c-orange-100: #FAE3D3;
+
+  /* Cream / fundos aquecidos */
+  --c-cream-50:  #FFFDF5;
+  --c-cream-100: #f8f5ea;
+  --c-cream-200: #FCEFC7;
+
+  /* Neutros — cliente/garçom/cozinha (escala aquecida) */
+  --c-gray-50:   #F8F7F4;
+  --c-gray-100:  #EEEDE8;
+  --c-gray-200:  #DEDDD7;
+  --c-gray-300:  #C5C4BD;
+  --c-gray-500:  #8A8880;
+  --c-gray-700:  #4B4A43;
+  --c-gray-900:  #1F1E19;
+
+  /* Neutros — admin dark (escala musgo escuro para dashboard SaaS)
+     Renomeado de --c-slate-* para --c-moss-* pois os valores são
+     tons de verde musgo, não ardósia fria. */
+  --c-moss-950: #13240A;
+  --c-moss-900: #12382b;
+  --c-moss-800: #143f1c;
+  --c-moss-700: #194620;
+  --c-moss-600: #3f7a64;
+  --c-moss-500: #55967c;   /* textos desabilitados / placeholders */
+  --c-moss-400: #74b399;
+  --c-moss-300: #98d1b7;   /* bordas de inputs e divisórias */
+  --c-moss-200: #c2e8d7;
+  --c-moss-100: #e3f5ed;   /* fundo de inputs no light mode */
+  --c-moss-50:  #f2faf6;   /* fundo geral do sistema */
+
+  /* Status primitives */
+  --c-red:    #E63946;
+  --c-amber:  #E9C46A;
+  --c-orange: #F4A261;
+  --c-teal:   #2A9D8F;
+  --c-blue:   #457B9D;
+
+  /* ── 2. SEMANTIC (cliente/garçom/cozinha — default) ── */
+
+  --page-bg:          var(--c-cream-100);
+  --surface:          #FFFFFF;
+  --surface-sunken:   var(--c-gray-50);
+
+  --text-primary:     var(--c-gray-900);
+  --text-secondary:   var(--c-gray-700);
+  --text-muted:       var(--c-gray-500);
+  --text-on-brand:    #FFFFFF;
+  --text-on-accent:   #FFFFFF;
+
+  --border-subtle:    var(--c-gray-100);
+  --border-default:   var(--c-gray-200);
+  --border-strong:    var(--c-gray-300);
+
+  /* ── ALIASES LEGADOS — DEPRECIADOS ─────────────────────
+     Usados em style.css de cliente e garçom.
+     Serão removidos nas Etapas 3 e 4 quando esses arquivos
+     migrarem para var(--c-gray-*) ou tokens semânticos.
+     NÃO adicionar novos usos destes aliases.
+  ────────────────────────────────────────────────────── */
+  --gray-50:  var(--c-gray-50);
+  --gray-100: var(--c-gray-100);
+  --gray-200: var(--c-gray-200);
+  --gray-300: var(--c-gray-300);
+  --gray-500: var(--c-gray-500);
+  --gray-700: var(--c-gray-700);
+  --gray-900: var(--c-gray-900);
+
+  /* ── 4. COMPONENT TOKENS ───────────────────────────── */
+
+  /* Brand / primary (verde folha) */
+  --brand-primary:       var(--c-leaf-700);
+  --brand-primary-hover: var(--c-leaf-800);   /* agora distinto do primary */
+  --brand-primary-soft:  rgba(40, 79, 10, 0.12);
+  --brand-primary-text:  #FFFFFF;
+
+  /* Accent (laranja torrado) */
+  --brand-accent:        var(--c-orange-500);
+  --brand-accent-hover:  var(--c-orange-700);
+  --brand-accent-soft:   rgba(221, 111, 45, 0.12);
+  --brand-accent-text:   #FFFFFF;
+
+  /* Sidebar / header (TODOS os apps compartilham o verde folha) */
+  --sidebar-bg:            var(--brand-primary);
+  --sidebar-text:          #FFFFFF;
+  --sidebar-text-muted:    rgba(255, 255, 255, 0.70);
+  --sidebar-item-active:   rgba(0, 0, 0, 0.18);
+  --sidebar-active-bg:     rgba(0, 0, 0, 0.18);
+  --sidebar-active-border: var(--brand-accent);
+  --sidebar-logo-color:    #FFFFFF;
+
+  /* Kitchen / KDS */
+  --kds-bg:          var(--c-leaf-950);
+  --kds-surface:     rgba(255, 255, 255, 0.05);
+  --kds-surface-alt: rgba(255, 255, 255, 0.03);
+  --kds-border:      rgba(255, 255, 255, 0.08);
+  --kds-text:        #E8E7DF;
+  --kds-text-muted:  rgba(255, 255, 255, 0.60);
+
+  /* Status — estável entre todos os apps */
+  --status-pending-color:  var(--c-red);
+  --status-pending-bg:     rgba(230, 57, 70, 0.10);
+  --status-pending-border: rgba(230, 57, 70, 0.35);
+
+  --status-received-color:  #B8860B;
+  --status-received-bg:     rgba(233, 196, 106, 0.18);
+  --status-received-border: rgba(233, 196, 106, 0.45);
+
+  --status-preparing-color:  #C96A1F;
+  --status-preparing-bg:     rgba(244, 162, 97, 0.18);
+  --status-preparing-border: rgba(244, 162, 97, 0.45);
+
+  --status-ready-color:  var(--c-teal);
+  --status-ready-bg:     rgba(42, 157, 143, 0.12);
+  --status-ready-border: rgba(42, 157, 143, 0.40);
+
+  --status-delivered-color:  var(--c-blue);
+  --status-delivered-bg:     rgba(69, 123, 157, 0.12);
+  --status-delivered-border: rgba(69, 123, 157, 0.35);
+
+  --status-free-color:  var(--c-gray-500);
+  --status-free-bg:     #FFFFFF;
+  --status-free-border: var(--c-gray-200);
+
+  --status-success-color: var(--c-teal);
+  --status-danger-color:  var(--c-red);
+  --status-warning-color: var(--c-amber);
+  --status-info-color:    var(--c-blue);
+
+  --success: var(--status-success-color);
+  --warning: var(--status-warning-color);
+  --danger:  var(--status-danger-color);
+
+  /* ── 5. TYPOGRAPHY ─────────────────────────────────── */
+
+  --font-base: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Escala ampliada para mobile-first.
+     Anterior: xs=11 sm=13 md=14 lg=16.
+     Ganho: melhor legibilidade e conformidade WCAG mínima em xs. */
+  --fs-xs:   12px;
+  --fs-sm:   14px;
+  --fs-md:   15px;
+  --fs-lg:   17px;
+  --fs-xl:   20px;
+  --fs-2xl:  26px;
+
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+  --fw-black:    800;
+
+  /* ── 6. LAYOUT / SHADOW / MOTION ───────────────────── */
+
+  --radius-xs:   4px;
+  --radius-sm:   8px;
+  --radius:      12px;
+  --radius-lg:   16px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(31, 30, 25, 0.04);
+  --shadow:    0 2px 8px rgba(31, 30, 25, 0.06);
+  --shadow-lg: 0 8px 24px rgba(31, 30, 25, 0.10);
+
+  /* Duração — escala completa */
+  --dur-instant: 0.08s;    /* feedbacks táteis imediatos */
+  --dur-fast:    0.15s;    /* hovers, foco */
+  --dur-normal:  0.22s;    /* transições de estado */
+  --dur-slow:    0.35s;    /* transições de página, modais */
+
+  /* Easing — intenção semântica */
+  --ease-out:    cubic-bezier(0.0, 0.0, 0.2, 1);   /* saída — elemento desaparece */
+  --ease-in:     cubic-bezier(0.4, 0.0, 1, 1);      /* entrada — elemento aparece */
+  --ease-inout:  cubic-bezier(0.4, 0.0, 0.2, 1);    /* transição bilateral */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* microinterações com overshoot */
+
+  --z-header: 100;
+  --z-modal:  200;
+  --z-toast:  300;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   ADMIN — TEMA
+   O admin é o único app com tema alternável.
+   O <html> recebe data-theme="dark" ou data-theme="light".
+   As classes padrão (.btn, .card, .table-grid, etc.) consomem
+   apenas tokens semânticos do admin (--admin-*).
+   Primitivos internos migrados de --c-slate-* para --c-moss-*.
+═══════════════════════════════════════════════════════════ */
+
+/* Default do admin = DARK (se nada for definido no <html>) */
+:root {
+  --admin-bg-primary:   var(--c-moss-950);
+  --admin-bg-secondary: var(--c-moss-900);
+  --admin-bg-card:      var(--c-moss-800);
+  --admin-bg-hover:     var(--c-moss-700);
+  --admin-bg-input:     var(--c-moss-700);
+
+  --admin-border:       rgba(255, 255, 255, 0.08);
+  --admin-border-hover: rgba(255, 255, 255, 0.16);
+
+  --admin-text-primary:   var(--c-moss-100);
+  --admin-text-secondary: var(--c-moss-300);
+  --admin-text-muted:     var(--c-moss-500);
+
+  --admin-table-hover:  var(--c-moss-700);
+  --admin-scroll-track: var(--c-moss-900);
+  --admin-scroll-thumb: var(--c-moss-700);
+
+  --admin-shadow: 0 4px 12px rgba(0, 0, 0, 0.30);
+
+  /* Tons semânticos do dashboard (no dark) */
+  --admin-data-blue:    #99c9f0;
+  --admin-data-teal:    #b4f5eb;
+  --admin-data-amber:   #E4B34A;
+  --admin-data-red:     #E87279;
+  --admin-data-neutral: #8A90A8;
+}
+
+[data-theme="light"] {
+  --admin-bg-primary:   #eeedeb;
+  --admin-bg-secondary: #ceccc8;
+  --admin-bg-card:      #FFFFFF;
+  --admin-bg-hover:     #F1EFE8;
+  --admin-bg-input:     #FFFFFF;
+
+  --admin-border:       rgba(31, 30, 25, 0.08);
+  --admin-border-hover: rgba(31, 30, 25, 0.16);
+
+  --admin-text-primary:   var(--c-gray-900);
+  --admin-text-secondary: var(--c-gray-700);
+  --admin-text-muted:     var(--c-gray-500);
+
+  --admin-table-hover:  var(--c-gray-50);
+  --admin-scroll-track: var(--c-gray-100);
+  --admin-scroll-thumb: var(--c-gray-300);
+
+  --admin-shadow: 0 2px 8px rgba(31, 30, 25, 0.06);
+
+  /* Tons semânticos do dashboard (no light) */
+  --admin-data-blue:    #2B7FC7;
+  --admin-data-teal:    var(--c-teal);
+  --admin-data-amber:   #C9A227;
+  --admin-data-red:     var(--c-red);
+  --admin-data-neutral: var(--c-gray-500);
+}
+
+[data-theme="dark"] {
+  /* Explicitamente mesmos valores do :root default — útil se o
+     usuário vier de light e alternar para dark via toggle. */
+  --admin-bg-primary:   var(--c-moss-950);
+  --admin-bg-secondary: var(--c-moss-900);
+  --admin-bg-card:      var(--c-moss-800);
+  --admin-bg-hover:     var(--c-moss-700);
+  --admin-bg-input:     var(--c-moss-700);
+
+  --admin-border:       rgba(255, 255, 255, 0.08);
+  --admin-border-hover: rgba(255, 255, 255, 0.16);
+
+  --admin-text-primary:   var(--c-moss-100);
+  --admin-text-secondary: var(--c-moss-300);
+  --admin-text-muted:     var(--c-moss-500);
+
+  --admin-table-hover:  var(--c-moss-700);
+  --admin-scroll-track: var(--c-moss-900);
+  --admin-scroll-thumb: var(--c-moss-700);
+
+  --admin-shadow: 0 4px 12px rgba(0, 0, 0, 0.30);
+
+  --admin-data-blue:    #5BA3DF;
+  --admin-data-teal:    #97e9dd;
+  --admin-data-amber:   #E4B34A;
+  --admin-data-red:     #E87279;
+  --admin-data-neutral: #8A90A8;
+}

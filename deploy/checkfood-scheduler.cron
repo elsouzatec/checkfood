@@ -1,0 +1,6 @@
+# PagFood · agendador do Laravel (mensalidades, etc.)
+# Instalar em: /etc/cron.d/checkfood-scheduler  (dono root, modo 644)
+# Roda o scheduler a cada minuto como www-data; o Laravel decide o que executar
+# (billing:check-overdue está agendado para 03:00 em routes/console.php).
+
+* * * * * www-data cd /var/www/checkfood/api && /usr/bin/php artisan schedule:run >> /dev/null 2>&1
