@@ -1,11 +1,26 @@
 # Proposta — Carteira Digital (saldo pré-pago) · CheckFood / PagFood
 
-> Status: **proposta / em desenho** · Atualizado: 2026-06-05
+> Status: **ENGATILHADO — aguardando teste de campo** · Atualizado: 2026-06-05
+> Plano pronto para execução; **não iniciar a Fase A** até a conclusão do teste de campo
+> do sistema atual em produção. Ver §0 (Gatilho de início).
 > Objetivo: dar a cada restaurante uma **carteira de saldo pré-pago** para seus clientes —
 > cumulativa entre visitas, consumível nos pedidos, com **bônus de recarga** e **cashback**,
 > tudo **configurável por restaurante** (filosofia de relacionamento própria de cada tenant).
 
 ---
+
+## 0. Gatilho de início (engatilhado)
+
+Este roteiro está **pronto, porém parado**. A prioridade imediata é um **teste de campo do
+que já existe** — o sistema atual em produção (cardápio, pedidos, cozinha, caixa, garçom,
+pagamentos, plataforma/billing). A carteira **só entra em desenvolvimento depois** que esse
+teste de campo validar o sistema atual em uso real.
+
+**Para disparar a Fase A, dois pré-requisitos:**
+1. Teste de campo do sistema atual concluído (sem pendências que mudem premissas de pagamento).
+2. As 4 questões em aberto da §11 respondidas.
+
+Enquanto isso, nada de migrations/models de carteira. O documento serve de plano congelado.
 
 ## 1. Conceito
 
