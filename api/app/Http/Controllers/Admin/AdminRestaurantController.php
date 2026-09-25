@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Restaurant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class AdminRestaurantController extends Controller
@@ -108,6 +109,20 @@ class AdminRestaurantController extends Controller
         }
 
         $path = $request->file('logo')->store('logos', 'public');
+
+        // Mesma guarda do upload de produto: store() devolve false silenciosamente
+        // quando não consegue gravar no disco público.
+        if (!$path) {
+            Log::error('Falha ao gravar logo do restaurante.', [
+                'restaurant_id' => $restaurant->id,
+                'dir'           => Storage::disk('public')->path('logos'),
+            ]);
+
+            return response()->json([
+                'message' => 'Não foi possível salvar a imagem no servidor (permissão de escrita).',
+            ], 500);
+        }
+
         $restaurant->update(['logo_url' => '/storage/' . $path]);
 
         return response()->json([

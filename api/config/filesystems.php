@@ -45,6 +45,14 @@ return [
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
+
+            // Uploads chegam pelo php-fpm (www-data) mas o deploy/CLI roda como
+            // checkfood. Sem o bit de grupo, a pasta criada por um usuário fica
+            // somente-leitura para o outro e o upload falha em silêncio.
+            'permissions' => [
+                'file' => ['public' => 0664, 'private' => 0640],
+                'dir' => ['public' => 0775, 'private' => 0750],
+            ],
         ],
 
         's3' => [

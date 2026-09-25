@@ -50,6 +50,20 @@ O script: copia cert → instala/ativa o vhost → `nginx -t` → `reload` → `
 
 > ⚠️ Observações da 1ª tentativa: nginx 1.24 **não** aceita `http2 on;` (corrigido para `listen 8088 ssl http2;`); e colar comandos longos no terminal pode "comer" os `&&` — por isso o `setup-plataforma.sh` (um comando só).
 
+## Uploads de imagem (`/storage`)
+
+Fotos de produto e logo do restaurante vão para `api/storage/app/public/` (`products/`, `logos/`) e são servidas em `/storage` pelo symlink `api/public/storage` (`php artisan storage:link`, uma vez só).
+
+⚠️ **Essas pastas precisam ser graváveis pelo grupo.** O php-fpm roda como `www-data`, mas o deploy/CLI (`artisan`, builds) roda como `checkfood` — e o cron do scheduler, como `www-data`. Uma pasta criada por um dos dois nasce somente-leitura para o outro. Por isso `api/storage/app/public` tem setgid e grupo `www-data` (`2775`):
+
+```bash
+chmod -R g+w /var/www/checkfood/api/storage/app/public
+```
+
+O disco `public` em `config/filesystems.php` declara `permissions` (dir `0775`, file `0664`) para que subpastas novas já nasçam certas. Como toda mudança de config em produção, **só vale depois de `php artisan config:cache`**.
+
+> Sem a permissão de grupo o upload falha **em silêncio**: o disco usa `'throw' => false`, então `store()` devolve `false` sem exceção e sem log — e o que ia para o banco era a string `/storage/`, com a API respondendo 200. `AdminProductController::uploadImage` e `AdminRestaurantController::uploadLogo` hoje tratam esse retorno: respondem 500 e registram em `storage/logs/` o diretório que recusou a escrita. Se um upload disser que salvou e a foto não aparecer, confira estas permissões antes de qualquer outra coisa.
+
 ## Config de produção / cache
 
 `api/.env` deve estar em produção: `APP_ENV=production` e `APP_DEBUG=false` (com debug ligado, qualquer erro 500 vaza stack trace, queries e trechos do `.env` — incluindo credenciais).
