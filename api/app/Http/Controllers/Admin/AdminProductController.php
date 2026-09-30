@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class AdminProductController extends Controller
@@ -116,6 +117,22 @@ class AdminProductController extends Controller
         }
 
         $path = $request->file('image')->store('products', 'public');
+
+        // store() devolve false — sem exceção, porque o disco usa 'throw' => false —
+        // quando não consegue gravar (tipicamente falta de permissão de escrita em
+        // storage/app/public). Sem esta guarda gravávamos '/storage/' no banco e
+        // respondíamos 200: o admin via "salvo" e a foto nunca aparecia.
+        if (!$path) {
+            Log::error('Falha ao gravar imagem do produto.', [
+                'product_id' => $product->id,
+                'dir'        => Storage::disk('public')->path('products'),
+            ]);
+
+            return response()->json([
+                'message' => 'Não foi possível salvar a imagem no servidor (permissão de escrita).',
+            ], 500);
+        }
+
         $product->update(['image_url' => '/storage/' . $path]);
 
         return response()->json([
