@@ -41,6 +41,12 @@ class PaymentController extends Controller
             'method' => 'required|string|in:pix,dinheiro,cartao',
         ]);
 
+        // Dinheiro/cartão marcam como pago na hora: só a equipe atesta que recebeu.
+        // O cliente (app da mesa) só pode gerar PIX, que é confirmado pelo gateway.
+        if ($request->method !== 'pix' && ! $this->isStaff($request)) {
+            return response()->json(['message' => 'Pagamento em dinheiro ou cartão é registrado pela equipe.'], 403);
+        }
+
         if ($payment->isPaid()) {
             return response()->json([
                 'message' => 'Pagamento já confirmado.',
@@ -138,9 +144,14 @@ class PaymentController extends Controller
     {
         $this->authorizePayment($payment, $request);
 
+        // Terminal é operado pela equipe; cliente da mesa nunca confirma pagamento.
+        if (! $this->isStaff($request)) {
+            return response()->json(['message' => 'Acesso negado.'], 403);
+        }
+
         $request->validate([
             'status' => 'required|string|in:approved,rejected,pending',
-            'terminal_payment_id' => 'nullable|string',
+            'terminal_payment_id' => 'required_if:status,approved|nullable|string|max:100',
             'external_reference' => 'required|string',
         ]);
 
@@ -156,7 +167,35 @@ class PaymentController extends Controller
             ]);
         }
 
+        $restaurant = $payment->restaurant;
+
+        // Só aceita callback de pagamento que foi de fato enviado ao terminal (deep-link).
+        if (! $restaurant->terminal_integration_enabled || $payment->gateway !== $restaurant->terminal_acquirer) {
+            return response()->json(['message' => 'Este pagamento não foi enviado ao terminal.'], 422);
+        }
+
         if ($request->status === 'approved') {
+            $terminalPaymentId = (string) $request->terminal_payment_id;
+
+            // Uma transação da adquirente não pode quitar dois pagamentos.
+            $alreadyUsed = Payment::where('gateway_payment_id', $terminalPaymentId)
+                ->where('id', '!=', $payment->id)
+                ->exists();
+
+            if ($alreadyUsed || ! $this->terminalService->verifyApproved($payment, $restaurant, $terminalPaymentId)) {
+                \Log::warning('confirmPos: aprovação não confirmada pela adquirente', [
+                    'payment_id' => $payment->id,
+                    'restaurant_id' => $payment->restaurant_id,
+                    'terminal_payment_id' => $terminalPaymentId,
+                    'already_used' => $alreadyUsed,
+                ]);
+
+                return response()->json([
+                    'message' => 'Pagamento não confirmado pela adquirente. Confira no terminal antes de liberar a mesa.',
+                    'payment' => $this->formatPayment($payment),
+                ], 422);
+            }
+
             try {
                 $payment->update([
                     'gateway_payment_id' => $request->terminal_payment_id,
@@ -199,6 +238,11 @@ class PaymentController extends Controller
     }
 
     // ── helpers ──────────────────────────────────────────
+
+    private function isStaff(Request $request): bool
+    {
+        return in_array($request->user()->role->value, ['waiter', 'manager', 'cashier'], true);
+    }
 
     private function authorizePayment(Payment $payment, Request $request): void
     {

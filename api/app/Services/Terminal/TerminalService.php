@@ -43,6 +43,15 @@ class TerminalService
     }
 
     /**
+     * Confirma a transação na API da adquirente do restaurante.
+     */
+    public function verifyApproved(Payment $payment, Restaurant $restaurant, string $terminalPaymentId): bool
+    {
+        return $this->gateway($restaurant->terminal_acquirer ?? 'mercadopago')
+            ->verifyApproved($payment, $restaurant, $terminalPaymentId);
+    }
+
+    /**
      * Interpreta o callback recebido na back_url.
      */
     public function parseCallback(string $acquirer, array $params): array
