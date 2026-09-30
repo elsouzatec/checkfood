@@ -1006,6 +1006,20 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Pedido cancelado: listado para conferência, mas fora do total da conta */
+.cx-order--cancelled { opacity: 0.6; }
+.cx-order--cancelled .cx-order__total,
+.cx-order--cancelled .cx-order__subtotal { text-decoration: line-through; }
+.cx-order__tag {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-black);
+  color: var(--cx-danger);
+  background: var(--cx-danger-soft);
+  border-radius: var(--cx-radius-sm);
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+
 .cx-order__items { list-style: none; padding: 0; margin: 0; }
 .cx-order__item {
   display: grid;
