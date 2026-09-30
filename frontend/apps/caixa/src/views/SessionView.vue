@@ -270,10 +270,16 @@ onUnmounted(stopPixPolling)
         <!-- Pedidos -->
         <section class="cx-section">
           <h2 class="cx-section__title">Pedidos</h2>
-          <div v-for="order in session.orders" :key="order.id" class="cx-order">
+          <div
+            v-for="order in session.orders"
+            :key="order.id"
+            class="cx-order"
+            :class="{ 'cx-order--cancelled': order.status === 'cancelado' }"
+          >
             <div class="cx-order__head">
               <span class="cx-order__id">#{{ order.id }}</span>
               <span class="cx-order__time">{{ formatTime(order.created_at) }}</span>
+              <span v-if="order.status === 'cancelado'" class="cx-order__tag">Cancelado · fora da conta</span>
               <span class="cx-order__total">{{ formatPrice(order.total) }}</span>
             </div>
             <ul class="cx-order__items">

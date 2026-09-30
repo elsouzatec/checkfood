@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Caixa;
 
 use App\Enums\CashierShiftStatus;
+use App\Enums\OrderStatus;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Services\Payment\PaymentService;
@@ -11,6 +12,7 @@ use App\Models\CashierShift;
 use App\Models\Payment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -82,8 +84,8 @@ class CaixaController extends Controller
                 'is_overdue'            => $waitMin > $overdueThreshold,
                 'payment_method_chosen' => $s->payment_method_chosen,
                 'total_amount'          => $this->calcSessionTotal($s),
-                'order_count'           => $s->orders->count(),
-                'item_count'            => $s->orders->sum(fn ($o) => $o->items->count()),
+                'order_count'           => $this->billableOrders($s)->count(),
+                'item_count'            => $this->billableOrders($s)->sum(fn ($o) => $o->items->count()),
             ];
         });
 
@@ -141,6 +143,9 @@ class CaixaController extends Controller
             ];
         });
 
+        // Pedidos cancelados continuam listados (status vai no payload), mas fora da conta.
+        $totalAmount = $this->calcSessionTotal($session);
+
         // Pagamentos já registrados (caso o caixa tenha feito pagamento parcial)
         $payments = Payment::where('session_id', $session->id)
             ->where('status', 'paid')
@@ -165,9 +170,9 @@ class CaixaController extends Controller
             'closed_at'             => $session->closed_at?->toIso8601String(),
             'payment_method_chosen' => $session->payment_method_chosen,
             'orders'                => $orders,
-            'total_amount'          => $orders->sum('total'),
+            'total_amount'          => $totalAmount,
             'paid_amount'           => $payments->sum('amount'),
-            'remaining_amount'      => $orders->sum('total') - $payments->sum('amount'),
+            'remaining_amount'      => $totalAmount - $payments->sum('amount'),
             'payments_done'         => $payments,
         ]);
     }
@@ -232,9 +237,7 @@ class CaixaController extends Controller
                 $session->update(['status' => SessionStatus::AT_CASHIER]);
             }
 
-            $totalAmount = $session->orders->sum(
-                fn ($o) => $o->items->sum(fn ($i) => $i->unit_price * $i->quantity)
-            );
+            $totalAmount = $this->calcSessionTotal($session);
             $alreadyPaid = Payment::where('session_id', $session->id)
                 ->where('status', 'paid')
                 ->sum('amount');
@@ -474,12 +477,22 @@ class CaixaController extends Controller
             ],
         ]);
     }    /**
-     * Calcula total de uma sessão somando todos os order_items não-cancelados.
+     * Calcula total de uma sessão somando os order_items dos pedidos não-cancelados.
+     * Mesma regra de PaymentService::calculateSessionTotal() (PIX), mas sobre a
+     * relação já carregada — evita uma query por sessão na fila.
      */
     private function calcSessionTotal(AppSession $session): float
     {
-        return (float) $session->orders->sum(
+        return (float) $this->billableOrders($session)->sum(
             fn ($o) => $o->items->sum(fn ($i) => $i->unit_price * $i->quantity)
         );
+    }
+
+    /**
+     * Pedidos que entram na conta: todos, exceto os cancelados.
+     */
+    private function billableOrders(AppSession $session): Collection
+    {
+        return $session->orders->reject(fn ($o) => $o->status === OrderStatus::CANCELADO);
     }
 }
