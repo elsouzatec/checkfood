@@ -4,6 +4,7 @@ namespace App\Services\Terminal;
 
 use App\Models\Payment;
 use App\Models\Restaurant;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -50,9 +51,19 @@ class MercadoPagoTerminalGateway implements TerminalGatewayInterface
             return false;
         }
 
-        $response = Http::withToken($token)
-            ->timeout(10)
-            ->get('https://api.mercadopago.com/v1/payments/'.rawurlencode($terminalPaymentId));
+        try {
+            $response = Http::withToken($token)
+                ->timeout(10)
+                ->get('https://api.mercadopago.com/v1/payments/'.rawurlencode($terminalPaymentId));
+        } catch (ConnectionException $e) {
+            // Timeout/rede: sem prova de aprovação, não quita (o garçom confere no terminal).
+            Log::warning('verifyApproved: sem conexão com o Mercado Pago', [
+                'payment_id' => $payment->id,
+                'error'      => $e->getMessage(),
+            ]);
+
+            return false;
+        }
 
         if (! $response->successful()) {
             Log::warning('verifyApproved: consulta ao Mercado Pago falhou', [

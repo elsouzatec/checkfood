@@ -15,6 +15,7 @@ use App\Models\Restaurant;
 use App\Models\Table;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -180,6 +181,17 @@ class PaymentConfirmationSecurityTest extends TestCase
         $this->fakeMercadoPago(['message' => 'not found'], 404);
 
         $this->confirmPos($this->waiter)->assertStatus(422);
+
+        $this->assertStillPending();
+    }
+
+    public function test_timeout_na_api_da_adquirente_nao_paga(): void
+    {
+        Http::fake(['api.mercadopago.com/*' => fn () => throw new ConnectionException('timeout')]);
+
+        $this->confirmPos($this->waiter)
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Pagamento não confirmado pela adquirente. Confira no terminal antes de liberar a mesa.');
 
         $this->assertStillPending();
     }
