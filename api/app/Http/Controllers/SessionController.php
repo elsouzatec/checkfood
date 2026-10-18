@@ -146,6 +146,11 @@ class SessionController extends Controller
             if ($session->user_id !== $user->id) {
                 return response()->json(['message' => 'Acesso negado.'], 403);
             }
+
+            // Cliente só fecha a própria conta se o restaurante liberou pagamento pelo app.
+            if (! $session->restaurant->allow_client_payment) {
+                return response()->json(['message' => 'Peça a conta ao garçom.'], 403);
+            }
         } else {
             if ($session->restaurant_id !== $user->restaurant_id) {
                 return response()->json(['message' => 'Acesso negado.'], 403);

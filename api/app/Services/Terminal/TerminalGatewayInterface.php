@@ -3,6 +3,7 @@
 namespace App\Services\Terminal;
 
 use App\Models\Payment;
+use App\Models\Restaurant;
 
 /**
  * Contrato para integração com terminais POS (maquininhas).
@@ -35,6 +36,14 @@ interface TerminalGatewayInterface
      *               'external_reference'  => string]
      */
     public function parseCallback(array $params): array;
+
+    /**
+     * Confirma na API da adquirente que a transação foi aprovada e pertence a
+     * este pagamento (referência + valor). O callback chega pelo navegador do
+     * garçom e não prova nada sozinho — sem esta checagem, qualquer um forja
+     * "approved". Adquirente sem API de consulta não deve ser registrada.
+     */
+    public function verifyApproved(Payment $payment, Restaurant $restaurant, string $terminalPaymentId): bool;
 
     /** Nome interno da adquirente — deve coincidir com terminal_acquirer no DB. */
     public function getAcquirerName(): string;
