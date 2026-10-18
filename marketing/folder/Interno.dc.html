@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Folder PagFood — face interna</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,800;9..40,900&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#22440A}a:hover{color:#13240A}
+</style>
+</helmet>
+<div style="width: 1145px; height: 816px; display: grid; grid-template-columns: 389.2px 377.9px 377.9px; font-family: 'DM Sans', sans-serif; color: #1F1E19; background: #FFFDF5; overflow: hidden">
+
+<!-- ═══ Painel 1: o problema ═══ -->
+<section style="box-sizing: border-box; padding: 59px 36px 51px 51px; background: #FFFDF5; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<p style="margin: 0; font-size: 13px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #C25D24">O problema</p>
+<h2 style="margin: 0; font-size: 36px; line-height: 1.02; font-weight: 900; letter-spacing: -0.025em; color: #22440A; text-wrap: balance">Salão cheio não é o problema.</h2>
+<p style="margin: 0; font-size: 15px; line-height: 1.45; color: #4B4A43">O problema é o caminho que cada pedido faz entre a mesa, a cozinha e o caixa. Cada volta a pé é tempo que não vira atendimento.</p>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border-radius: 16px; background: #FAE3D3">
+<div style="display: flex; align-items: center; gap: 10px">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C25D24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="4" r="2"></circle><path d="M9 21l2.5-6.5L14 17v4M7 12l3-4 4 1.5 2.5 3 2.5 0.5"></path></svg>
+<p style="margin: 0; font-size: 17px; font-weight: 900; color: #13240A">Garçom que virou mensageiro</p>
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 1.4; color: #4B4A43">Anota, leva à cozinha, volta para ver se saiu, vai buscar a conta. Na noite cheia, ele anda em vez de atender.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border-radius: 16px; background: #FAE3D3">
+<div style="display: flex; align-items: center; gap: 10px">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C25D24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><path d="M14 3v6h6M9 14l6 4M15 14l-6 4"></path></svg>
+<p style="margin: 0; font-size: 17px; font-weight: 900; color: #13240A">Comanda que se perde</p>
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 1.4; color: #4B4A43">Papel molhado, letra ilegível, pedido que a cozinha nunca viu. O erro só aparece quando o prato errado chega.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border-radius: 16px; background: #FAE3D3">
+<div style="display: flex; align-items: center; gap: 10px">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C25D24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2.5M9 2h6"></path></svg>
+<p style="margin: 0; font-size: 17px; font-weight: 900; color: #13240A">Fila para ir embora</p>
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 1.4; color: #4B4A43">O cliente terminou, mas espera a conta, a maquininha e confere item por item. É desse minuto que ele lembra.</p>
+</div>
+</div>
+</section>
+
+<!-- ═══ Painel 2: como funciona ═══ -->
+<section style="box-sizing: border-box; padding: 59px 36px 51px; background: #22440A; color: #FFFDF5; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<p style="margin: 0; font-size: 13px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #8BBD68">Como funciona</p>
+<h2 style="margin: 0; font-size: 36px; line-height: 1.02; font-weight: 900; letter-spacing: -0.025em; text-wrap: balance">Três passos, <span style="color: {{accent}}">nenhuma volta</span> a pé.</h2>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; gap: 14px; align-items: flex-start">
+<p style="margin: 0; flex-shrink: 0; width: 40px; font-size: 44px; line-height: 0.9; font-weight: 900; color: {{accent}}">1</p>
+<div><p style="margin: 0; font-size: 17px; font-weight: 900">O pedido sai da mesa</p><p style="margin: 3px 0 0; font-size: 14px; line-height: 1.4; color: #DCEACC">O cliente pede pelo QR code — sem app, sem cadastro. Ou o garçom lança no celular, ali na mesa.</p></div>
+</div>
+<div style="display: flex; gap: 14px; align-items: flex-start">
+<p style="margin: 0; flex-shrink: 0; width: 40px; font-size: 44px; line-height: 0.9; font-weight: 900; color: {{accent}}">2</p>
+<div><p style="margin: 0; font-size: 17px; font-weight: 900">O garçom aprova</p><p style="margin: 3px 0 0; font-size: 14px; line-height: 1.4; color: #DCEACC">Prato vai para a cozinha, bebida para o bar, cada setor com a sua comanda. O estoque já é descontado.</p></div>
+</div>
+<div style="display: flex; gap: 14px; align-items: flex-start">
+<p style="margin: 0; flex-shrink: 0; width: 40px; font-size: 44px; line-height: 0.9; font-weight: 900; color: {{accent}}">3</p>
+<div><p style="margin: 0; font-size: 17px; font-weight: 900">Pronto, entregue, pago</p><p style="margin: 3px 0 0; font-size: 14px; line-height: 1.4; color: #DCEACC">A conta fecha pelo celular do cliente ou no caixa, em PIX, cartão ou dinheiro.</p></div>
+</div>
+</div>
+
+<!-- Ilustração: um pedido, duas comandas -->
+<div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px">
+<div style="padding: 10px 12px; border-radius: 12px; background: #FFFDF5; color: #1F1E19">
+<div style="display: flex; justify-content: space-between; align-items: center"><p style="margin: 0; font-size: 12px; font-weight: 900; color: #22440A">Mesa 7 · pedido</p><span style="font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 8px; background: #FAE3D3; color: #C25D24">Aguardando garçom</span></div>
+<p style="margin: 4px 0 0; font-size: 12px; line-height: 1.35">1× Picanha na chapa · 2× Suco de cupuaçu</p>
+</div>
+<div style="display: flex; justify-content: center"><svg width="20" height="18" viewBox="0 0 20 18" fill="none" stroke="#8BBD68" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 1v15M3 9l7 7 7-7"></path></svg></div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<div style="padding: 9px 10px; border-radius: 12px; background: #DCEACC; color: #13240A"><p style="margin: 0; font-size: 12px; font-weight: 900">Cozinha</p><p style="margin: 2px 0 0; font-size: 12px">1× Picanha na chapa</p></div>
+<div style="padding: 9px 10px; border-radius: 12px; background: #DCEACC; color: #13240A"><p style="margin: 0; font-size: 12px; font-weight: 900">Bar</p><p style="margin: 2px 0 0; font-size: 12px">2× Suco de cupuaçu</p></div>
+</div>
+</div>
+</section>
+
+<!-- ═══ Painel 3: o que já está pronto ═══ -->
+<section style="box-sizing: border-box; padding: 59px 43px 51px 32px; background: #F8F5EA; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<p style="margin: 0; font-size: 13px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #C25D24">Já está pronto</p>
+<h2 style="margin: 0; font-size: 36px; line-height: 1.02; font-weight: 900; letter-spacing: -0.025em; color: #22440A; text-wrap: balance">Nada aqui é promessa.</h2>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<div style="padding: 12px; border-radius: 14px; background: #FFFDF5; display: flex; flex-direction: column; gap: 6px">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22440A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><path d="M14 14h3v3h-3zM20 14v1M14 20h1M18 18h3v3"></path></svg>
+<p style="margin: 0; font-size: 14px; font-weight: 900; line-height: 1.2; color: #22440A">Cardápio por QR code</p>
+</div>
+<div style="padding: 12px; border-radius: 14px; background: #FFFDF5; display: flex; flex-direction: column; gap: 6px">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22440A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M8 12.5l2.5 2.5L16 9.5"></path></svg>
+<p style="margin: 0; font-size: 14px; font-weight: 900; line-height: 1.2; color: #22440A">Pedido com aprovação</p>
+</div>
+<div style="padding: 12px; border-radius: 14px; background: #FFFDF5; display: flex; flex-direction: column; gap: 6px">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22440A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="8" height="16" rx="1.5"></rect><rect x="13" y="4" width="8" height="16" rx="1.5"></rect><path d="M6 9h2M16 9h2M6 13h2M16 13h2"></path></svg>
+<p style="margin: 0; font-size: 14px; font-weight: 900; line-height: 1.2; color: #22440A">Cozinha e bar separados</p>
+</div>
+<div style="padding: 12px; border-radius: 14px; background: #FFFDF5; display: flex; flex-direction: column; gap: 6px">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22440A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"></path><rect x="3" y="9" width="18" height="8" rx="2"></rect><path d="M7 14h10v7H7z"></path></svg>
+<p style="margin: 0; font-size: 14px; font-weight: 900; line-height: 1.2; color: #22440A">Comanda impressa</p>
+</div>
+<div style="padding: 12px; border-radius: 14px; background: #FFFDF5; display: flex; flex-direction: column; gap: 6px">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22440A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"></path></svg>
+<p style="margin: 0; font-size: 14px; font-weight: 900; line-height: 1.2; color: #22440A">Chamar garçom</p>
+</div>
+<div style="padding: 12px; border-radius: 14px; background: #FFFDF5; display: flex; flex-direction: column; gap: 6px">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22440A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"></path><path d="M3 8l9 5 9-5M12 13v8"></path></svg>
+<p style="margin: 0; font-size: 14px; font-weight: 900; line-height: 1.2; color: #22440A">Estoque por ficha técnica</p>
+</div>
+<div style="padding: 12px; border-radius: 14px; background: #FFFDF5; display: flex; flex-direction: column; gap: 6px">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22440A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20M6 15h4"></path></svg>
+<p style="margin: 0; font-size: 14px; font-weight: 900; line-height: 1.2; color: #22440A">PIX e cartão na mesa</p>
+</div>
+<div style="padding: 12px; border-radius: 14px; background: #FFFDF5; display: flex; flex-direction: column; gap: 6px">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22440A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="10" width="18" height="11" rx="2"></rect><path d="M7 10V5h10v5M8 15h3M14 15h2"></path></svg>
+<p style="margin: 0; font-size: 14px; font-weight: 900; line-height: 1.2; color: #22440A">Caixa com turno</p>
+</div>
+</div>
+
+<div style="margin-top: auto; padding: 16px 18px; border-radius: 16px; background: #22440A; color: #FFFDF5; display: flex; flex-direction: column; gap: 10px">
+<p style="margin: 0; font-size: 16px; font-weight: 900">Painel do gerente, no celular</p>
+<p style="margin: 0; font-size: 13px; line-height: 1.4; color: #DCEACC">Faturamento, pratos mais vendidos, tempo de preparo e desempenho de cada garçom.</p>
+<div style="display: flex; align-items: flex-end; gap: 6px; height: 40px">
+<div style="flex-grow: 1; height: 45%; border-radius: 4px; background: #8BBD68"></div>
+<div style="flex-grow: 1; height: 70%; border-radius: 4px; background: #8BBD68"></div>
+<div style="flex-grow: 1; height: 55%; border-radius: 4px; background: #8BBD68"></div>
+<div style="flex-grow: 1; height: 85%; border-radius: 4px; background: #8BBD68"></div>
+<div style="flex-grow: 1; height: 100%; border-radius: 4px; background: {{accent}}"></div>
+</div>
+</div>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#DD6F2D","options":["#DD6F2D","#8BBD68","#F2B63D"]},"$preview":{"width":1145,"height":816}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#DD6F2D' };
+}
+}
+</script>
+</body>
+</html>

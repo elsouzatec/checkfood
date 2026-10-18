@@ -1,0 +1,23 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-09-30T20:40:00Z"},
+  "title": "Folder PagFood",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 1145, "h": 816, "title": "Face externa — aba · verso · capa"},
+    "Interno.dc.html": {"x": 1225, "y": 0, "w": 1145, "h": 816, "title": "Face interna — problema · como funciona · recursos"}
+  },
+  "order": ["Main.dc.html", "Interno.dc.html"],
+  "notes": {
+    "grafica": {
+      "x": 0,
+      "y": 936,
+      "w": 620,
+      "size": "m",
+      "fill": "orange",
+      "text": "Para a gráfica\n\n• Formato final: A4 deitado (297 × 210 mm), 3 dobras tipo carta (enrolado)\n• Arquivo com sangria de 3 mm: 303 × 216 mm, sem marcas de corte\n• Página 1 = face externa · página 2 = face interna (frente e verso, virar pela borda curta)\n• Painéis, da esquerda p/ direita — externa: 97 · 100 · 100 mm; interna: 100 · 100 · 97 mm\n• Dobras na face interna a 100 mm e 200 mm da borda esquerda (sem contar a sangria)\n• Papel sugerido: couché 150 g, brilho ou fosco\n• Cores em RGB: pedir prova de cor (conversão para CMYK)"
+    }
+  },
+  "designSystems": []
+}
