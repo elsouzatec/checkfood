@@ -15,12 +15,25 @@ Arquivo: `/etc/nginx/sites-available/checkfood`. Serve, na mesma origem:
 | `/garcom/` | `frontend/apps/garcom/dist` |
 | `/cozinha/` | `frontend/apps/cozinha/dist` |
 | `/caixa/` | `frontend/apps/caixa/dist` |
+| `/produto` | `frontend/site/` — vitrine de produto, estática (snippet `deploy/vitrine.nginx.conf`) |
 | `/` (catch-all) | `frontend/apps/cliente/dist` |
 
 Cada app: `location /<app>/assets/` (cache 1 ano) + `location /<app>` (HTML, `try_files ... /<app>/index.html`, no-cache).
 
 ### App plataforma (super admin) — porta dedicada, sem domínio
 Servido em **https://72.61.46.146:8088/** por um `server` block separado, com **certificado self-signed** (o navegador avisa na 1ª visita). `base` do Vite é `/`. Artefatos em `deploy/` (ver abaixo).
+
+## Vitrine de produto (`/produto`)
+
+Página de vendas pública em **https://pagfood.online/produto**, no mesmo formato da vitrine do CheckAutomate. É HTML/CSS puro em `frontend/site/` (`index.html`, `favicon.svg`, `og-pagfood.png` 1200×630 para o preview no WhatsApp/Instagram) — **sem build**: editou, está no ar. As cores são uma cópia local dos tokens do PagFood, de propósito, para a vitrine não quebrar quando os apps mudarem.
+
+Publicação (uma vez, como root):
+```bash
+bash /var/www/checkfood/deploy/setup-vitrine.sh
+```
+O script copia `deploy/vitrine.nginx.conf` para `/etc/nginx/snippets/checkfood-vitrine.conf`, insere o `include` no vhost `checkfood` antes do bloco do app cliente (com backup `checkfood.bak-vitrine-<data>` em `sites-available`), roda `nginx -t` — restaurando o backup se falhar — e recarrega. É idempotente.
+
+O CTA aponta para o WhatsApp `5591984211468` (atributo `data-whatsapp`, 3 ocorrências em `index.html`). Não há demonstração pública ainda: quando houver, entra como seção própria, como no CheckAutomate.
 
 ## Build dos apps de frontend
 

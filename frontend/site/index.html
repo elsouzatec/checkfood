@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Sistema para restaurante: cardápio por QR code na mesa, pedido direto na cozinha e no bar, comanda impressa, estoque por ficha técnica e conta fechada pelo celular ou no caixa.">
+    <title>PagFood — cardápio por QR code, cozinha e caixa para o seu restaurante</title>
+
+    <!-- A página existe para ser compartilhada: sem estas tags, colar o link no
+         WhatsApp ou no Instagram mostra um preview vazio. -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="PagFood">
+    <meta property="og:locale" content="pt_BR">
+    <meta property="og:url" content="https://pagfood.online/produto">
+    <meta property="og:title" content="O pedido sai da mesa e chega na cozinha — sem ninguém correr">
+    <meta property="og:description" content="Cardápio por QR code, cozinha e bar separados, comanda impressa e conta fechada pelo celular. Sistema completo para restaurante, bar e pizzaria de salão.">
+    <meta property="og:image" content="https://pagfood.online/produto/og-pagfood.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="icon" href="/produto/favicon.svg" type="image/svg+xml">
+    <meta name="theme-color" content="#284F0A">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Paleta = tokens do PagFood (frontend/shared/tokens.css): verde folha +
+           laranja torrado + creme. Cópia local de propósito: a vitrine é estática
+           e não pode quebrar quando os apps mudarem os tokens. */
+        :root {
+            --leaf-950: #13240A; --leaf-800: #22440A; --leaf-700: #284F0A;
+            --leaf-500: #5A9635; --leaf-300: #8BBD68; --leaf-100: #DCEACC; --leaf-50: #F1F6EA;
+            --orange-700: #C25D24; --orange-500: #DD6F2D; --orange-100: #FAE3D3;
+            --cream-50: #FFFDF5; --cream-100: #F8F5EA;
+            --gray-50: #F8F7F4; --gray-100: #EEEDE8; --gray-200: #DEDDD7; --gray-300: #C5C4BD;
+            --gray-500: #8A8880; --gray-600: #6B6962; --gray-700: #4B4A43; --gray-900: #1F1E19;
+            --blue-50: #EAF1FB; --blue-700: #2B5C9E;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+        body {
+            margin: 0; background: #fff; color: var(--gray-900);
+            font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+        }
+        h1, h2, h3, p, ul, figure { margin: 0; }
+        ul { padding: 0; list-style: none; }
+        a { color: inherit; text-decoration: none; }
+        strong { font-weight: 600; color: var(--gray-900); }
+
+        .wrap { max-width: 72rem; margin: 0 auto; padding-inline: 1rem; }
+        @media (min-width: 1024px) { .wrap { padding-inline: 2rem; } }
+        .section { padding-block: 3.5rem; }
+        @media (min-width: 1024px) { .section { padding-block: 5rem; } }
+        .band { background: var(--cream-100); border-block: 1px solid var(--gray-100); }
+        .narrow { max-width: 48rem; }
+        [id] { scroll-margin-top: 4rem; }
+
+        .eyebrow { font-size: .875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--orange-700); }
+        h1 { margin-top: .75rem; font-size: 2.25rem; line-height: 1.15; font-weight: 700; letter-spacing: -.02em; }
+        @media (min-width: 1024px) { h1 { font-size: 3rem; } }
+        h2 { font-size: 1.5rem; line-height: 1.25; font-weight: 700; letter-spacing: -.015em; }
+        @media (min-width: 1024px) { h2 { font-size: 1.875rem; } }
+        .eyebrow + h2 { margin-top: .75rem; }
+        h3 { font-size: 1rem; font-weight: 600; }
+        .lead { margin-top: 1.25rem; font-size: 1.125rem; line-height: 1.65; color: var(--gray-700); }
+        .sub { margin-top: .75rem; color: var(--gray-700); max-width: 42rem; line-height: 1.6; }
+        .muted { color: var(--gray-600); }
+        .small { font-size: .875rem; line-height: 1.6; }
+        .xs { font-size: .75rem; }
+        .accent { color: var(--leaf-700); }
+
+        .btn { display: inline-block; padding: .75rem 1.5rem; border-radius: 999px; font-weight: 600; transition: background .15s, border-color .15s; }
+        .btn-primary { background: var(--leaf-700); color: #fff; }
+        .btn-primary:hover { background: var(--leaf-800); }
+        .btn-ghost { border: 1px solid var(--gray-300); color: var(--gray-900); }
+        .btn-ghost:hover { background: var(--gray-50); }
+        .btn-lg { padding: .875rem 2rem; }
+        .btn-row { margin-top: 2rem; display: flex; flex-wrap: wrap; gap: .75rem; }
+
+        .grid { display: grid; gap: 1.5rem; }
+        @media (min-width: 640px) { .sm-2 { grid-template-columns: repeat(2, 1fr); } .sm-3 { grid-template-columns: repeat(3, 1fr); } }
+        @media (min-width: 768px) { .md-2 { grid-template-columns: repeat(2, 1fr); } .md-3 { grid-template-columns: repeat(3, 1fr); } }
+        @media (min-width: 1024px) { .lg-2 { grid-template-columns: repeat(2, 1fr); } .lg-3 { grid-template-columns: repeat(3, 1fr); } .lg-5 { grid-template-columns: repeat(5, 1fr); } }
+        .mt-6 { margin-top: 1.5rem; } .mt-8 { margin-top: 2rem; } .mt-10 { margin-top: 2.5rem; }
+
+        .card { background: #fff; border: 1px solid var(--gray-200); border-radius: .75rem; padding: 1.25rem; }
+        .card-lg { padding: 1.5rem; }
+        .card .emoji { font-size: 1.875rem; line-height: 1; }
+        .card h3 { margin-top: .75rem; }
+        .card p { margin-top: .5rem; }
+        .step { display: inline-flex; width: 2rem; height: 2rem; align-items: center; justify-content: center; border-radius: 999px; background: var(--leaf-700); color: #fff; font-size: .875rem; font-weight: 600; }
+        .card .step + h3 { margin-top: 1rem; }
+
+        .checks { margin-top: 1.5rem; display: grid; gap: .75rem; font-size: .9375rem; color: var(--gray-700); }
+        .checks li { position: relative; padding-left: 1.6rem; }
+        .checks li::before { content: "✓"; position: absolute; left: 0; color: var(--leaf-500); font-weight: 700; }
+
+        /* ── Topo ── */
+        header.top { border-bottom: 1px solid var(--gray-100); background: rgba(255,255,255,.92); backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 10; }
+        header.top .wrap { height: 4rem; display: flex; align-items: center; justify-content: space-between; }
+        .brand { display: flex; align-items: center; gap: .5rem; font-weight: 700; letter-spacing: -.01em; font-size: 1.0625rem; }
+        .brand img { width: 1.75rem; height: 1.75rem; }
+        header.top nav { display: flex; align-items: center; gap: 1.5rem; font-size: .875rem; }
+        header.top nav .link { color: var(--gray-700); display: none; }
+        header.top nav .link:hover { color: var(--gray-900); }
+        @media (min-width: 640px) { header.top nav .link { display: inline; } }
+        header.top .btn { padding: .5rem 1rem; font-weight: 500; }
+
+        /* ── Mockups (desenhados em HTML, não screenshots) ── */
+        .stage { border: 1px solid var(--gray-200); background: var(--cream-100); border-radius: 1rem; padding: 1.5rem; }
+        @media (min-width: 1024px) { .stage { padding: 2rem; } }
+        .phone { margin: 0 auto; max-width: 18.5rem; background: var(--gray-900); border-radius: 2rem; padding: .55rem; box-shadow: 0 20px 40px -20px rgba(31,30,25,.45); }
+        .screen { background: var(--cream-50); border-radius: 1.5rem; overflow: hidden; position: relative; }
+        .screen-head { background: var(--leaf-700); color: #fff; padding: 1.1rem 1rem .9rem; }
+        .screen-head .name { font-weight: 700; }
+        .screen-head .table { font-size: .75rem; opacity: .85; }
+        .chips { display: flex; gap: .4rem; padding: .75rem 1rem .25rem; overflow: hidden; }
+        .chip { font-size: .7rem; font-weight: 600; padding: .3rem .65rem; border-radius: 999px; background: #fff; border: 1px solid var(--gray-200); color: var(--gray-700); white-space: nowrap; }
+        .chip.on { background: var(--leaf-700); border-color: var(--leaf-700); color: #fff; }
+        .items { padding: .5rem 1rem 6.25rem; display: grid; gap: .6rem; }
+        .item { display: flex; gap: .7rem; align-items: center; background: #fff; border: 1px solid var(--gray-100); border-radius: .75rem; padding: .55rem; }
+        .thumb { width: 3rem; height: 3rem; border-radius: .55rem; flex-shrink: 0; display: grid; place-items: center; font-size: 1.4rem; background: var(--orange-100); }
+        .item .t { font-size: .8rem; font-weight: 600; line-height: 1.25; }
+        .item .d { font-size: .68rem; color: var(--gray-500); line-height: 1.3; margin-top: .1rem; }
+        .item .p { font-size: .75rem; font-weight: 700; color: var(--leaf-700); margin-top: .2rem; }
+        .add { margin-left: auto; width: 1.6rem; height: 1.6rem; border-radius: 999px; background: var(--leaf-700); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: .95rem; flex-shrink: 0; }
+        .call { position: absolute; right: .8rem; bottom: 3.9rem; background: var(--orange-500); color: #fff; font-size: .68rem; font-weight: 700; padding: .45rem .75rem; border-radius: 999px; box-shadow: 0 6px 14px -6px rgba(194,93,36,.7); }
+        .cartbar { position: absolute; left: .8rem; right: .8rem; bottom: .8rem; background: var(--leaf-700); color: #fff; border-radius: .8rem; padding: .65rem .85rem; display: flex; justify-content: space-between; font-size: .75rem; font-weight: 600; }
+
+        .ticket { background: #fff; border: 1px solid var(--gray-200); border-radius: .75rem; overflow: hidden; }
+        .ticket-head { display: flex; justify-content: space-between; align-items: center; padding: .6rem .85rem; border-bottom: 1px dashed var(--gray-200); font-size: .8rem; font-weight: 700; }
+        .ticket ul { padding: .65rem .85rem .75rem; display: grid; gap: .35rem; font-size: .8rem; }
+        .ticket .obs { font-size: .7rem; color: var(--orange-700); font-weight: 600; margin-left: 1.4rem; }
+        .tag { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: .15rem .45rem; border-radius: .35rem; }
+        .tag-k { background: var(--orange-100); color: var(--orange-700); }
+        .tag-b { background: var(--blue-50); color: var(--blue-700); }
+        .tag-p { background: var(--gray-100); color: var(--gray-700); }
+        .split { display: grid; gap: 1rem; align-items: center; }
+        @media (min-width: 768px) { .split { grid-template-columns: 1fr auto 1fr; } }
+        .split .arrow { text-align: center; color: var(--gray-500); font-size: .8rem; font-weight: 600; }
+        .split .arrow span { display: block; font-size: 1.5rem; line-height: 1; color: var(--leaf-500); }
+        @media (max-width: 767px) { .split .arrow span { transform: rotate(90deg); display: inline-block; } }
+        .split .outs { display: grid; gap: 1rem; }
+
+        .roles { display: grid; gap: 1rem; }
+        @media (min-width: 640px) { .roles { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 1024px) { .roles { grid-template-columns: repeat(5, 1fr); } }
+        .role { background: #fff; border: 1px solid var(--gray-200); border-radius: .75rem; padding: 1.25rem; }
+        .role .who { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--leaf-500); }
+        .role h3 { margin-top: .35rem; }
+        .role p { margin-top: .5rem; }
+
+        .dash { background: #fff; border: 1px solid var(--gray-200); border-radius: .75rem; overflow: hidden; }
+        .dash-top { display: flex; align-items: center; gap: .5rem; padding: .75rem 1rem; border-bottom: 1px solid var(--gray-100); font-size: .875rem; }
+        .dot { width: .6rem; height: .6rem; border-radius: 999px; background: var(--leaf-500); }
+        .dash-top .date { margin-left: auto; font-size: .75rem; color: var(--gray-500); }
+        .kpis { display: grid; grid-template-columns: repeat(2, 1fr); }
+        @media (min-width: 640px) { .kpis { grid-template-columns: repeat(3, 1fr); } }
+        @media (min-width: 1024px) { .kpis { grid-template-columns: repeat(5, 1fr); } }
+        .kpi { padding: 1rem; border-right: 1px solid var(--gray-100); border-bottom: 1px solid var(--gray-100); }
+        @media (max-width: 639px) { .kpi:last-child { grid-column: 1 / -1; } }
+        .kpi .l { font-size: .75rem; color: var(--gray-500); }
+        .kpi .v { margin-top: .25rem; font-size: 1.25rem; font-weight: 700; }
+        .kpi .v.ok { color: var(--leaf-700); }
+        .dash-body { display: grid; }
+        @media (min-width: 768px) { .dash-body { grid-template-columns: 1.3fr 1fr; } .dash-body > div + div { border-left: 1px solid var(--gray-100); } }
+        .dash-body > div { padding: .9rem 1rem 1rem; }
+        .dash-label { font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-500); }
+        .rank { margin-top: .6rem; display: grid; gap: .45rem; font-size: .85rem; }
+        .rank li { display: flex; gap: .6rem; }
+        .rank .n { color: var(--gray-500); font-variant-numeric: tabular-nums; width: 1.1rem; }
+        .rank .q { margin-left: auto; color: var(--gray-700); font-variant-numeric: tabular-nums; }
+        .bars { margin-top: .7rem; display: grid; gap: .55rem; font-size: .8rem; }
+        .bar-row { display: grid; grid-template-columns: 4.5rem 1fr 2.5rem; gap: .5rem; align-items: center; }
+        .bar { height: .5rem; border-radius: 999px; background: var(--gray-100); overflow: hidden; }
+        .bar i { display: block; height: 100%; background: var(--leaf-500); border-radius: 999px; }
+        .bar-row .pct { text-align: right; color: var(--gray-700); font-variant-numeric: tabular-nums; }
+        figcaption { margin-top: .75rem; text-align: center; font-size: .75rem; color: var(--gray-500); }
+
+        .features { display: grid; gap: 2rem; }
+        @media (min-width: 640px) { .features { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 1024px) { .features { grid-template-columns: repeat(3, 1fr); column-gap: 2rem; } }
+        .features .emoji { font-size: 1.5rem; line-height: 1; }
+        .features h3 { margin-top: .5rem; }
+        .features p { margin-top: .4rem; }
+
+        .faq { max-width: 48rem; border-block: 1px solid var(--gray-100); }
+        .faq details { padding-block: 1rem; }
+        .faq details + details { border-top: 1px solid var(--gray-100); }
+        .faq summary { display: flex; align-items: center; justify-content: space-between; cursor: pointer; list-style: none; font-weight: 500; }
+        /* list-style:none não basta no Safari: sem isto o triângulo nativo
+           aparece junto do "+" do acordeão. */
+        .faq summary::-webkit-details-marker { display: none; }
+        .faq summary .plus { margin-left: 1rem; color: var(--gray-500); font-size: 1.25rem; line-height: 1; transition: transform .15s; }
+        .faq details[open] .plus { transform: rotate(45deg); }
+        .faq details p { margin-top: .75rem; }
+
+        .final { background: var(--leaf-700); }
+        .final .wrap { padding-block: 4rem; text-align: center; }
+        .final h2 { color: #fff; }
+        .final p { margin: 1rem auto 0; max-width: 42rem; color: var(--leaf-100); line-height: 1.6; }
+        .final .btn { margin-top: 2rem; background: #fff; color: var(--leaf-800); }
+        .final .btn:hover { background: var(--leaf-50); }
+
+        footer .wrap { padding-block: 2.5rem; font-size: .875rem; color: var(--gray-500); }
+        footer p + p { margin-top: .25rem; }
+    </style>
+</head>
+<body>
+
+<!-- ── Topo ─────────────────────────────────────────────────────────────── -->
+<header class="top">
+    <div class="wrap">
+        <span class="brand"><img src="/produto/favicon.svg" alt="" width="28" height="28"> PagFood</span>
+        <nav>
+            <a href="#como-funciona" class="link">Como funciona</a>
+            <a href="#pronto" class="link">O que já está pronto</a>
+            <a href="https://wa.me/5591984211468?text=Ol%C3%A1!%20Vi%20o%20PagFood%20e%20quero%20saber%20mais." target="_blank" rel="noopener" class="btn btn-primary" data-whatsapp>
+                Falar com a gente
+            </a>
+        </nav>
+    </div>
+</header>
+
+<!-- ── Hero ─────────────────────────────────────────────────────────────── -->
+<section class="wrap" style="padding-block: 3.5rem 4rem;">
+    <div class="narrow">
+        <p class="eyebrow">Sistema para restaurante, da mesa ao caixa</p>
+        <h1>
+            O pedido sai da mesa e chega na cozinha —
+            <span class="accent">sem o garçom dar uma volta no salão.</span>
+        </h1>
+        <p class="lead">
+            Com o PagFood, o cliente pede pelo <strong>QR code da mesa</strong>, o garçom aprova no
+            celular e o pedido cai sozinho na tela da cozinha e do bar, com a comanda impressa. No fim,
+            a conta fecha pelo celular do cliente ou no caixa, sem ninguém conferir item por item.
+        </p>
+        <div class="btn-row">
+            <a href="#como-funciona" class="btn btn-primary">Ver como funciona</a>
+            <a href="https://wa.me/5591984211468?text=Ol%C3%A1!%20Vi%20o%20PagFood%20e%20quero%20saber%20mais." target="_blank" rel="noopener" class="btn btn-ghost" data-whatsapp>
+                Falar com a gente
+            </a>
+        </div>
+        <p class="small muted" style="margin-top: 1rem;">
+            Roda no navegador: celular, tablet ou a tela da cozinha. Ninguém instala nada — nem o cliente.
+        </p>
+    </div>
+</section>
+
+<!-- ── A dor ────────────────────────────────────────────────────────────── -->
+<section class="band">
+    <div class="wrap section">
+        <h2>Salão cheio não é o problema</h2>
+        <p class="sub">O problema é o caminho que cada pedido faz entre a mesa, a cozinha e o caixa. Cada volta a pé é tempo que não vira atendimento.</p>
+
+        <div class="grid sm-3 mt-10">
+            <div class="card">
+                <p class="emoji" aria-hidden="true">🏃</p>
+                <h3>Garçom que virou mensageiro</h3>
+                <p class="small muted">
+                    Anota na mesa, leva à cozinha, volta para saber se saiu, vai ao caixa buscar a conta.
+                    Na noite cheia, a mesa espera por um garçom que está andando, não atendendo.
+                </p>
+            </div>
+            <div class="card">
+                <p class="emoji" aria-hidden="true">📝</p>
+                <h3>Comanda que se perde</h3>
+                <p class="small muted">
+                    Papel que molha, letra que ninguém entende, pedido que a cozinha nunca viu. O erro só
+                    aparece quando o prato errado chega na mesa — ou quando não chega.
+                </p>
+            </div>
+            <div class="card">
+                <p class="emoji" aria-hidden="true">🧾</p>
+                <h3>Fila para ir embora</h3>
+                <p class="small muted">
+                    O cliente já terminou, mas espera a conta, espera a maquininha, confere cada item. É o
+                    último minuto da visita — e é dele que o cliente se lembra.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Cardápio na mesa ─────────────────────────────────────────────────── -->
+<section class="wrap section">
+    <div class="grid lg-2" style="gap: 2.5rem; align-items: center;">
+        <div>
+            <p class="eyebrow">Na mesa do cliente</p>
+            <h2>O cardápio mora no QR code da mesa</h2>
+            <p class="sub">
+                O cliente aponta a câmera e o cardápio abre no navegador — sem baixar aplicativo e sem
+                cadastro. Ele escolhe, escreve a observação (“sem cebola”) e envia. Mudou o preço no
+                painel, mudou na mesa. Tirou o prato do cardápio, ele some na hora.
+            </p>
+            <ul class="checks">
+                <li>Foto, descrição e preço de cada item, separados por categoria</li>
+                <li>Botão <strong>Chamar garçom</strong>: o chamado aparece no celular do garçom com o número da mesa</li>
+                <li>Acompanhamento do pedido: recebido, na cozinha, pronto</li>
+                <li>A conta da mesa a qualquer momento, com a taxa de serviço, se você cobrar</li>
+                <li>Pagamento por PIX ou cartão ali mesmo — só se você quiser liberar</li>
+                <li>Placa do QR pronta para imprimir, com a senha do Wi-Fi se você quiser</li>
+            </ul>
+        </div>
+
+        <div class="stage" aria-hidden="true">
+            <div class="phone">
+                <div class="screen">
+                    <div class="screen-head">
+                        <p class="name">Seu Restaurante</p>
+                        <p class="table">Mesa 7 · 3 pessoas</p>
+                    </div>
+                    <div class="chips">
+                        <span class="chip">Entradas</span>
+                        <span class="chip on">Pratos</span>
+                        <span class="chip">Bebidas</span>
+                        <span class="chip">Sobremesas</span>
+                    </div>
+                    <div class="items">
+                        <div class="item">
+                            <div class="thumb">🥩</div>
+                            <div><p class="t">Picanha na chapa</p><p class="d">Arroz, farofa e vinagrete · serve 2</p><p class="p">R$ 89,90</p></div>
+                            <span class="add">+</span>
+                        </div>
+                        <div class="item">
+                            <div class="thumb">🐟</div>
+                            <div><p class="t">Filhote grelhado</p><p class="d">Com purê de macaxeira</p><p class="p">R$ 64,00</p></div>
+                            <span class="add">+</span>
+                        </div>
+                        <div class="item">
+                            <div class="thumb">🍝</div>
+                            <div><p class="t">Talharim ao pesto</p><p class="d">Manjericão, castanha e parmesão</p><p class="p">R$ 42,00</p></div>
+                            <span class="add">+</span>
+                        </div>
+                    </div>
+                    <span class="call">🙋 Chamar garçom</span>
+                    <div class="cartbar"><span>Ver pedido · 3 itens</span><span>R$ 153,90</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Como funciona ────────────────────────────────────────────────────── -->
+<section id="como-funciona" class="band">
+    <div class="wrap section">
+        <h2>Como funciona no seu dia</h2>
+
+        <div class="grid md-3 mt-10">
+            <div class="card card-lg">
+                <span class="step">1</span>
+                <h3>O pedido sai da mesa</h3>
+                <p class="small muted">
+                    O cliente pede pelo QR code. Ou o garçom lança no celular dele, ali na mesa, do mesmo
+                    jeito que fazia no bloquinho — só que o pedido não precisa mais ser levado a pé.
+                </p>
+            </div>
+            <div class="card card-lg">
+                <span class="step">2</span>
+                <h3>O garçom aprova, o sistema distribui</h3>
+                <p class="small muted">
+                    Nada chega na cozinha sem a aprovação do garçom — pedido de brincadeira morre ali.
+                    Aprovado, ele <strong>se divide sozinho</strong>: prato para a cozinha, bebida para o
+                    bar, cada setor com a sua comanda. E o estoque dos ingredientes já é descontado.
+                </p>
+            </div>
+            <div class="card card-lg">
+                <span class="step">3</span>
+                <h3>Pronto, entregue, pago</h3>
+                <p class="small muted">
+                    A cozinha marca quando começa e quando termina; o garçom vê que tem prato esperando.
+                    No fim, a conta fecha pelo celular do cliente ou vai para o caixa, que recebe em PIX,
+                    cartão ou dinheiro e fecha a mesa.
+                </p>
+            </div>
+        </div>
+
+        <!-- Mockup, não screenshot: é o mecanismo que o dono não vê em outro lugar —
+             um pedido misto virando uma comanda por setor. -->
+        <figure class="stage mt-8" style="background: #fff;">
+            <div class="split">
+                <div class="ticket">
+                    <div class="ticket-head"><span>Mesa 7 · pedido do cliente</span><span class="tag tag-p">Aguardando garçom</span></div>
+                    <ul>
+                        <li>1× Picanha na chapa</li>
+                        <li class="obs">sem cebola no vinagrete</li>
+                        <li>1× Talharim ao pesto</li>
+                        <li>2× Suco de cupuaçu</li>
+                        <li>1× Caipirinha de limão</li>
+                    </ul>
+                </div>
+                <p class="arrow"><span>→</span>garçom aprova</p>
+                <div class="outs">
+                    <div class="ticket">
+                        <div class="ticket-head"><span>🍳 Cozinha · Mesa 7</span><span class="tag tag-k">Novo</span></div>
+                        <ul>
+                            <li>1× Picanha na chapa</li>
+                            <li class="obs">sem cebola no vinagrete</li>
+                            <li>1× Talharim ao pesto</li>
+                        </ul>
+                    </div>
+                    <div class="ticket">
+                        <div class="ticket-head"><span>🍹 Bar · Mesa 7</span><span class="tag tag-b">Novo</span></div>
+                        <ul>
+                            <li>2× Suco de cupuaçu</li>
+                            <li>1× Caipirinha de limão</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <figcaption>Um pedido, duas comandas: cada setor vê — e imprime — só o que é dele.</figcaption>
+        </figure>
+    </div>
+</section>
+
+<!-- ── Um app para cada posto ───────────────────────────────────────────── -->
+<section class="wrap section">
+    <div class="narrow">
+        <p class="eyebrow">Cada um no seu posto</p>
+        <h2>Cada pessoa vê só o que precisa</h2>
+        <p class="sub">
+            Uma tela para cada função, todas ligadas ao mesmo pedido. Quem está na cozinha não precisa
+            ver a conta; quem está no caixa não precisa ver a fila de pratos.
+        </p>
+    </div>
+
+    <div class="roles mt-10">
+        <div class="role">
+            <p class="who">Cliente</p>
+            <h3>Cardápio e conta</h3>
+            <p class="small muted">Pede pelo QR, chama o garçom, acompanha o pedido, vê a conta e, se liberado, paga pelo celular.</p>
+        </div>
+        <div class="role">
+            <p class="who">Garçom</p>
+            <h3>Mesas no bolso</h3>
+            <p class="small muted">Abre mesa, lança e aprova pedidos, recebe chamados e é avisado quando o prato fica pronto.</p>
+        </div>
+        <div class="role">
+            <p class="who">Cozinha e bar</p>
+            <h3>Fila na tela</h3>
+            <p class="small muted">Pedidos na ordem em que chegaram, com observação em destaque. Um toque para começar, outro para pronto.</p>
+        </div>
+        <div class="role">
+            <p class="who">Caixa</p>
+            <h3>Conta sem conferência</h3>
+            <p class="small muted">Fila de mesas para fechar, conta já somada, PIX na hora, turno com abertura e fechamento.</p>
+        </div>
+        <div class="role">
+            <p class="who">Gerente</p>
+            <h3>O restaurante inteiro</h3>
+            <p class="small muted">Cardápio, mesas, equipe, estoque, impressão, faturamento e desempenho — tudo num painel.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ── Painel do gerente ────────────────────────────────────────────────── -->
+<section class="band">
+    <div class="wrap section">
+        <div class="narrow">
+            <p class="eyebrow">Do seu lado do balcão</p>
+            <h2>O painel é seu, e cabe no celular</h2>
+            <p class="sub">
+                Faturamento do dia e do período, formas de pagamento, pratos mais vendidos, tempo de preparo
+                contra a meta que você define e o desempenho de cada garçom. É também onde você mexe no
+                cardápio, nas mesas, na equipe e no estoque.
+            </p>
+        </div>
+
+        <!-- Mockup com números de exemplo, rotulados como tal. -->
+        <figure class="stage mt-8" style="background: #fff;">
+            <div class="dash">
+                <div class="dash-top">
+                    <span class="dot"></span>
+                    <span style="font-weight: 600; color: var(--gray-700);">Seu Restaurante</span>
+                    <span class="date">sábado, 12 de setembro</span>
+                </div>
+                <div class="kpis">
+                    <div class="kpi"><p class="l">Pedidos hoje</p><p class="v">64</p></div>
+                    <div class="kpi"><p class="l">Faturamento</p><p class="v ok">R$ 5.318</p></div>
+                    <div class="kpi"><p class="l">Na cozinha agora</p><p class="v">5</p></div>
+                    <div class="kpi"><p class="l">Tempo médio de preparo</p><p class="v">17 min</p></div>
+                    <div class="kpi"><p class="l">No prazo (meta 25 min)</p><p class="v ok">92%</p></div>
+                </div>
+                <div class="dash-body">
+                    <div>
+                        <p class="dash-label">Mais vendidos hoje</p>
+                        <ul class="rank">
+                            <li><span class="n">1</span>Suco de cupuaçu<span class="q">31</span></li>
+                            <li><span class="n">2</span>Caipirinha de limão<span class="q">22</span></li>
+                            <li><span class="n">3</span>Picanha na chapa<span class="q">18</span></li>
+                            <li><span class="n">4</span>Filhote grelhado<span class="q">12</span></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <p class="dash-label">Formas de pagamento</p>
+                        <div class="bars">
+                            <div class="bar-row"><span>PIX</span><span class="bar"><i style="width: 48%"></i></span><span class="pct">48%</span></div>
+                            <div class="bar-row"><span>Cartão</span><span class="bar"><i style="width: 39%"></i></span><span class="pct">39%</span></div>
+                            <div class="bar-row"><span>Dinheiro</span><span class="bar"><i style="width: 13%"></i></span><span class="pct">13%</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <figcaption>Exemplo de como o painel se parece. Os números são ilustrativos.</figcaption>
+        </figure>
+    </div>
+</section>
+
+<!-- ── O que já está pronto ─────────────────────────────────────────────── -->
+<section id="pronto" class="wrap section">
+    <h2>O que já está pronto</h2>
+    <p class="sub">Nada aqui é promessa de roadmap — é o que roda hoje.</p>
+
+    <div class="features mt-10">
+        <div>
+            <p class="emoji" aria-hidden="true">📱</p>
+            <h3>Cardápio por QR code</h3>
+            <p class="small muted">Cada mesa tem o seu QR. Abre no navegador do cliente, sem app e sem cadastro, e sempre com o preço que está no painel.</p>
+        </div>
+        <div>
+            <p class="emoji" aria-hidden="true">✅</p>
+            <h3>Pedido com aprovação</h3>
+            <p class="small muted">O garçom aprova antes de ir para a cozinha. Pedido errado ou de brincadeira não vira prato nem mexe no estoque.</p>
+        </div>
+        <div>
+            <p class="emoji" aria-hidden="true">🍳</p>
+            <h3>Cozinha e bar separados</h3>
+            <p class="small muted">Cada categoria tem o seu setor de preparo. O pedido misto se divide sozinho e cada setor vê só a sua parte.</p>
+        </div>
+        <div>
+            <p class="emoji" aria-hidden="true">🧾</p>
+            <h3>Comanda impressa</h3>
+            <p class="small muted">Na impressora térmica, no instante em que o pedido é aprovado. Acabou o papel? A comanda que falhou pode ser reimpressa do painel.</p>
+        </div>
+        <div>
+            <p class="emoji" aria-hidden="true">🙋</p>
+            <h3>Chamar garçom</h3>
+            <p class="small muted">O cliente chama pelo celular e o garçom recebe o chamado com o número da mesa. Ninguém precisa acenar no salão.</p>
+        </div>
+        <div>
+            <p class="emoji" aria-hidden="true">🥫</p>
+            <h3>Estoque por ficha técnica</h3>
+            <p class="small muted">Diga quanto de cada ingrediente vai no prato. O sistema desconta a cada pedido, devolve no cancelamento e avisa quando chega no mínimo.</p>
+        </div>
+        <div>
+            <p class="emoji" aria-hidden="true">💳</p>
+            <h3>Pagamento na mesa</h3>
+            <p class="small muted">PIX e cartão pelo Mercado Pago, direto na conta do restaurante. Liga e desliga quando quiser; gorjeta opcional, com o percentual que você definir.</p>
+        </div>
+        <div>
+            <p class="emoji" aria-hidden="true">💰</p>
+            <h3>Caixa com turno</h3>
+            <p class="small muted">Abertura e fechamento de turno com conferência, fila de mesas para receber, PIX gerado na hora e histórico do dia.</p>
+        </div>
+        <div>
+            <p class="emoji" aria-hidden="true">⏱️</p>
+            <h3>Tempo de preparo</h3>
+            <p class="small muted">Você define a meta em minutos; o painel mostra quanto saiu no prazo, o tempo médio e em que horário a cozinha aperta.</p>
+        </div>
+        <div>
+            <p class="emoji" aria-hidden="true">👥</p>
+            <h3>Desempenho da equipe</h3>
+            <p class="small muted">Pedidos, faturamento das mesas e cumprimento do prazo por garçom — para saber quem segura o salão.</p>
+        </div>
+        <div>
+            <p class="emoji" aria-hidden="true">⭐</p>
+            <h3>Avaliação do cliente</h3>
+            <p class="small muted">No fim da visita o cliente avalia o atendimento. Você lê tudo no painel, sem depender de review na internet.</p>
+        </div>
+        <div>
+            <p class="emoji" aria-hidden="true">🔐</p>
+            <h3>Seus dados são seus</h3>
+            <p class="small muted">Cada restaurante enxerga só os próprios pedidos e números. As credenciais do Mercado Pago ficam guardadas criptografadas.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ── Para quem ────────────────────────────────────────────────────────── -->
+<section class="band">
+    <div class="wrap section">
+        <h2>Para quem atende na mesa</h2>
+        <p class="sub">O PagFood organiza o que acontece dentro da casa: salão, cozinha, bar e caixa.</p>
+
+        <div class="grid md-3 mt-8">
+            <div class="card card-lg">
+                <h3>🍽️ Restaurante</h3>
+                <p class="small muted">
+                    Cardápio com foto na mesa, cozinha recebendo na hora, comanda impressa e conta fechada
+                    sem fila. O garçom volta a cuidar do cliente em vez de carregar papel.
+                </p>
+            </div>
+            <div class="card card-lg">
+                <h3>🍺 Bar e petiscaria</h3>
+                <p class="small muted">
+                    Bebida vai para o bar, petisco vai para a cozinha. A conta cresce a noite toda e o cliente
+                    confere quando quiser — e pede a próxima rodada sem precisar chamar ninguém.
+                </p>
+            </div>
+            <div class="card card-lg">
+                <h3>🍕 Pizzaria e lanchonete com salão</h3>
+                <p class="small muted">
+                    Sexta à noite com todas as mesas ocupadas: o pedido não espera o garçom passar, e a
+                    cozinha vê a fila inteira na ordem em que chegou.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Perguntas ────────────────────────────────────────────────────────── -->
+<section class="wrap section">
+    <h2>Perguntas que todo dono faz</h2>
+
+    <div class="faq mt-8">
+        <details>
+            <summary>O cliente precisa baixar aplicativo? <span class="plus">+</span></summary>
+            <p class="small muted">Não. Ele aponta a câmera para o QR code da mesa e o cardápio abre no navegador. Nem cadastro ele faz.</p>
+        </details>
+        <details>
+            <summary>E se alguém fizer pedido de brincadeira? <span class="plus">+</span></summary>
+            <p class="small muted">Todo pedido feito pelo QR passa pela aprovação do garçom antes de chegar à cozinha. O que ele recusa não vira prato nem desconta estoque.</p>
+        </details>
+        <details>
+            <summary>Meus garçons vão ter que mudar o jeito de trabalhar? <span class="plus">+</span></summary>
+            <p class="small muted">Pouco. O garçom continua indo à mesa e anotando — só que no celular, e o pedido chega à cozinha na hora, sem ele andar até lá. Quem prefere atender à moda antiga convive com quem pede pelo QR.</p>
+        </details>
+        <details>
+            <summary>Preciso de impressora? <span class="plus">+</span></summary>
+            <p class="small muted">Não é obrigatório: a cozinha pode trabalhar só pela tela. Se quiser a comanda em papel, basta uma impressora térmica ligada a um computador do restaurante.</p>
+        </details>
+        <details>
+            <summary>O dinheiro do PIX e do cartão cai onde? <span class="plus">+</span></summary>
+            <p class="small muted">Na conta Mercado Pago do próprio restaurante. O PagFood não passa pelo seu dinheiro. E se você preferir receber tudo no caixa, é só desligar o pagamento pelo celular.</p>
+        </details>
+        <details>
+            <summary>E se a internet cair? <span class="plus">+</span></summary>
+            <p class="small muted">O normal é rodar na nuvem, com a internet da casa. Para quem tem internet instável, dá para instalar o sistema na rede local do restaurante — nesse caso o pagamento pelo celular fica desligado e tudo é recebido no caixa.</p>
+        </details>
+        <details>
+            <summary>Quanto tempo para começar? <span class="plus">+</span></summary>
+            <p class="small muted">Cadastramos o cardápio, as mesas e a equipe, imprimimos os QR codes e ligamos. É questão de dias, não de meses.</p>
+        </details>
+    </div>
+</section>
+
+<!-- ── Chamada final ────────────────────────────────────────────────────── -->
+<section class="final">
+    <div class="wrap">
+        <h2>Seu cardápio. Suas mesas. Seu dinheiro na sua conta.</h2>
+        <p>
+            O PagFood tira do garçom tudo o que não é atender — levar recado, buscar conta, conferir
+            comanda — e devolve esse tempo para a mesa.
+        </p>
+        <a href="https://wa.me/5591984211468?text=Ol%C3%A1!%20Vi%20o%20PagFood%20e%20quero%20saber%20mais." target="_blank" rel="noopener" class="btn btn-lg" data-whatsapp>
+            Falar com a gente no WhatsApp
+        </a>
+    </div>
+</section>
+
+<footer>
+    <div class="wrap">
+        <p>PagFood — sistema para restaurante: cardápio por QR code, pedidos, cozinha, bar e caixa.</p>
+        <p>As telas desta página são desenhos ilustrativos; os números e o cardápio são de exemplo.</p>
+    </div>
+</footer>
+
+</body>
+</html>

@@ -15,7 +15,8 @@ Plataforma SaaS **multi-tenant** para restaurantes: cardápio digital por QR cod
 │   │   ├── caixa/       fechamento de conta / pagamentos
 │   │   ├── admin/       gestão do restaurante (gerente)
 │   │   └── plataforma/  super admin (gestão de tenants + mensalidades)
-│   └── shared/          CSS compartilhado (design tokens)
+│   ├── shared/          CSS compartilhado (design tokens)
+│   └── site/            vitrine de produto estática (https://pagfood.online/produto)
 └── Docs/                ARQUITETURA.md, API.md, deploy
 ```
 
