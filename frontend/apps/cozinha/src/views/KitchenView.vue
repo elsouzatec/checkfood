@@ -195,6 +195,7 @@ onUnmounted(() => {
           <div class="kds-card-header">
             <span class="kds-order-id">#{{ order.id }}</span>
             <span v-if="order.table" class="kds-table">Mesa {{ order.table.number }}</span>
+            <span v-else-if="order.origin === 'delivery'" class="kds-table">🛵 Entrega</span>
             <span class="kds-time" :class="{ urgent: isUrgent(order.confirmed_at) }">{{ timeSince(order.confirmed_at) }}min</span>
           </div>
 
@@ -229,6 +230,7 @@ onUnmounted(() => {
           <div class="kds-card-header">
             <span class="kds-order-id">#{{ order.id }}</span>
             <span v-if="order.table" class="kds-table">Mesa {{ order.table.number }}</span>
+            <span v-else-if="order.origin === 'delivery'" class="kds-table">🛵 Entrega</span>
             <span class="kds-time" :class="{ urgent: isUrgent(order.kitchen_started_at) }">{{ timeSince(order.kitchen_started_at) }}min</span>
           </div>
 
@@ -261,6 +263,7 @@ onUnmounted(() => {
           <div class="kds-card-header">
             <span class="kds-order-id">#{{ order.id }}</span>
             <span v-if="order.table" class="kds-table">Mesa {{ order.table.number }}</span>
+            <span v-else-if="order.origin === 'delivery'" class="kds-table">🛵 Entrega</span>
             <span class="kds-time">{{ timeSince(order.ready_at) }}min</span>
           </div>
 
@@ -291,7 +294,7 @@ onUnmounted(() => {
           @click="toggleTooltip(order.id, $event)"
         >
           <span class="chip-order">#{{ order.id }}</span>
-          <span class="chip-mesa">M{{ order.table?.number }}</span>
+          <span class="chip-mesa">{{ order.table ? 'M' + order.table.number : '🛵' }}</span>
           <span class="chip-name">{{ entregueLabel(order) }}</span>
           <span class="chip-time">{{ timeSince(order.delivered_at) }}'</span>
         </div>
@@ -308,6 +311,7 @@ onUnmounted(() => {
         <div class="tooltip-header">
           <span>Pedido #{{ tooltipOrder.id }}</span>
           <span v-if="tooltipOrder.table">Mesa {{ tooltipOrder.table.number }}</span>
+          <span v-else-if="tooltipOrder.origin === 'delivery'">🛵 Entrega</span>
         </div>
         <div v-for="item in tooltipOrder.items" :key="item.id" class="tooltip-item">
           <span>{{ item.quantity }}x {{ item.product.name }}</span>

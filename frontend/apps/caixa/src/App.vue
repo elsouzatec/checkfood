@@ -1,8 +1,9 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore }  from './stores/auth'
 import { useShiftStore } from './stores/shift'
+import api from './api'
 
 const route  = useRoute()
 const router = useRouter()
@@ -19,6 +20,28 @@ const firstName = computed(() => {
 const isQueueTab      = computed(() => ['queue', 'session'].includes(route.name))
 const isHistoryTab    = computed(() => route.name === 'history')
 const isFechamentoTab = computed(() => route.name === 'fechamento')
+const isDeliveriesTab = computed(() => route.name === 'deliveries')
+
+// Entregas novas aguardando aceite — contador na aba, visível de qualquer tela.
+const newDeliveries = ref(0)
+let deliveriesTimer = null
+
+async function pollDeliveries() {
+  try {
+    const { data } = await api.get('/caixa/deliveries')
+    newDeliveries.value = data.deliveries.filter(d => d.stage === 'aguardando' && d.status === 'active').length
+  } catch { /* sem conexão: tenta no próximo ciclo */ }
+}
+
+watch(showHeader, (on) => {
+  clearInterval(deliveriesTimer)
+  if (on) {
+    pollDeliveries()
+    deliveriesTimer = setInterval(pollDeliveries, 30000)
+  }
+}, { immediate: true })
+
+onUnmounted(() => clearInterval(deliveriesTimer))
 
 function formatPrice(v) {
   return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -62,6 +85,14 @@ async function handleLogout() {
             @click="router.push('/fila')"
           >
             Fila
+          </button>
+          <button
+            class="cx-tab"
+            :class="{ 'cx-tab--active': isDeliveriesTab }"
+            @click="router.push('/entregas')"
+          >
+            Entregas
+            <span v-if="newDeliveries > 0" class="cx-tab__badge">{{ newDeliveries }}</span>
           </button>
           <button
             class="cx-tab"

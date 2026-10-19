@@ -15,6 +15,7 @@ import AccountHomeView       from '../views/AccountHomeView.vue'
 import AccountOrdersView     from '../views/AccountOrdersView.vue'
 import AccountProfileView    from '../views/AccountProfileView.vue'
 import TermsView             from '../views/TermsView.vue'
+import DeliveryCheckoutView  from '../views/DeliveryCheckoutView.vue'
 
 const routes = [
   { path: '/mesa/:token',  name: 'qr-entry', component: QrEntryView },
@@ -33,6 +34,9 @@ const routes = [
   { path: '/minha-conta/pedidos',  name: 'account-orders',   component: AccountOrdersView,   meta: { requiresAccount: true } },
   { path: '/minha-conta/perfil',   name: 'account-profile',  component: AccountProfileView,  meta: { requiresAccount: true } },
   { path: '/termos',               name: 'terms',            component: TermsView },
+  // Entrega — cardápio em modo entrega (carrinho próprio) e finalização
+  { path: '/entrega',              name: 'delivery-menu',     component: MenuView,             props: { delivery: true }, meta: { requiresAccount: true } },
+  { path: '/entrega/finalizar',    name: 'delivery-checkout', component: DeliveryCheckoutView, meta: { requiresAccount: true } },
   { path: '/:pathMatch(.*)*', redirect: '/sem-mesa' },
 ]
 

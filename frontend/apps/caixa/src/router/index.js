@@ -4,6 +4,7 @@ import QueueView      from '../views/QueueView.vue'
 import SessionView    from '../views/SessionView.vue'
 import HistoryView    from '../views/HistoryView.vue'
 import FechamentoView from '../views/FechamentoView.vue'
+import DeliveriesView from '../views/DeliveriesView.vue'
 import { useShiftStore } from '../stores/shift'
 
 const routes = [
@@ -11,6 +12,7 @@ const routes = [
   { path: '/fila',        name: 'queue',       component: QueueView,      meta: { requiresAuth: true, requiresShift: true } },
   { path: '/sessao/:id',  name: 'session',     component: SessionView,    meta: { requiresAuth: true, requiresShift: true } },
   { path: '/historico',   name: 'history',     component: HistoryView,    meta: { requiresAuth: true, requiresShift: true } },
+  { path: '/entregas',    name: 'deliveries',  component: DeliveriesView, meta: { requiresAuth: true, requiresShift: true } },
   { path: '/fechamento',  name: 'fechamento',  component: FechamentoView, meta: { requiresAuth: true, requiresShift: true } },
 ]
 

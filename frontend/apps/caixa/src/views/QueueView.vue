@@ -147,9 +147,13 @@ onUnmounted(() => {
         >
           <div class="cx-qcard__head">
             <div class="cx-qcard__id">
-              <span class="cx-qcard__mesa">Mesa {{ item.table?.number ?? '?' }}</span>
+              <span class="cx-qcard__mesa">{{ item.type === 'entrega' ? '🛵 Entrega' : 'Mesa ' + (item.table?.number ?? '?') }}</span>
               <span
-                v-if="item.guest_name"
+                v-if="item.type === 'entrega'"
+                class="cx-qcard__guest"
+              >{{ item.delivery?.customer_name }}<template v-if="item.delivery?.change_for"> · troco p/ {{ formatPrice(item.delivery.change_for) }}</template></span>
+              <span
+                v-else-if="item.guest_name"
                 class="cx-qcard__guest"
               >{{ item.guest_name }}</span>
               <span v-else class="cx-qcard__guest cx-qcard__guest--empty">
@@ -193,7 +197,7 @@ onUnmounted(() => {
           <div class="cx-preview__head">
             <div>
               <div class="cx-preview__mesa">
-                Mesa {{ selected.table?.number ?? '?' }}
+                {{ selected.type === 'entrega' ? '🛵 Entrega — ' + (selected.delivery?.customer_name || '') : 'Mesa ' + (selected.table?.number ?? '?') }}
               </div>
               <div
                 class="cx-preview__guest"

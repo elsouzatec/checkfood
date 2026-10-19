@@ -1892,3 +1892,18 @@ body {
   .queue-list { grid-template-columns: repeat(2, 1fr); }
   .grouped-list { gap: 16px; }
 }
+
+/* Contador de entregas novas na aba "Entregas" */
+.cx-tab__badge {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--cx-accent);
+  color: var(--cx-accent-on);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 16px;
+  text-align: center;
+}

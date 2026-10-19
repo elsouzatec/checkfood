@@ -21,6 +21,11 @@ const form = ref({
   cashier_mode: false,
   tip_enabled: false,
   tip_default_percent: 10,
+  delivery_enabled: false,
+  delivery_fee: 0,
+  delivery_min_order: 0,
+  delivery_eta_minutes: '',
+  delivery_area_note: '',
 })
 
 // ── Credenciais MP ── (formulário e flags separados do `form` principal,
@@ -57,6 +62,11 @@ async function fetchRestaurant() {
       cashier_mode:                 !!r.cashier_mode,
       tip_enabled:                  !!r.tip_enabled,
       tip_default_percent:          r.tip_default_percent ?? 10,
+      delivery_enabled:             !!r.delivery_enabled,
+      delivery_fee:                 Number(r.delivery_fee ?? 0),
+      delivery_min_order:           Number(r.delivery_min_order ?? 0),
+      delivery_eta_minutes:         r.delivery_eta_minutes ?? '',
+      delivery_area_note:           r.delivery_area_note || '',
     }
     mpConfigured.value   = !!r.mercadopago_configured
     mpWebhookReady.value = !!r.mercadopago_webhook_ready
@@ -368,6 +378,48 @@ onMounted(fetchRestaurant)
             </div>
             <p class="hint">O garçom pode alterar este valor no momento do fechamento da conta.</p>
           </div>
+        </div>
+      </div>
+
+      <!-- ── Entrega (delivery) ── -->
+      <div class="card">
+        <div class="card-section">
+          <h3 class="section-title">🛵 Entrega</h3>
+          <p class="section-desc">
+            Quando habilitada, clientes com conta no restaurante podem pedir pelo celular
+            para receber em casa, sem estar numa mesa. O pagamento é feito na entrega e os
+            pedidos aparecem na aba <strong>Entregas</strong> do app do Caixa.
+          </p>
+
+          <div class="form-checkbox-stacked">
+            <label class="form-checkbox">
+              <input type="checkbox" v-model="form.delivery_enabled" />
+              Habilitar pedidos para entrega
+            </label>
+            <p class="hint">Desligue a qualquer momento (ex.: fora do horário de entrega) — novos pedidos param na hora.</p>
+          </div>
+
+          <template v-if="form.delivery_enabled">
+            <div class="form-row-3 settings-stack-gap">
+              <div class="form-group">
+                <label>Taxa de entrega (R$)</label>
+                <input type="number" min="0" step="0.50" v-model.number="form.delivery_fee" />
+                <p class="hint">0 = entrega grátis.</p>
+              </div>
+              <div class="form-group">
+                <label>Pedido mínimo (R$)</label>
+                <input type="number" min="0" step="1" v-model.number="form.delivery_min_order" />
+              </div>
+              <div class="form-group">
+                <label>Tempo estimado (min)</label>
+                <input type="number" min="5" max="300" step="5" v-model="form.delivery_eta_minutes" placeholder="Ex: 45" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Área atendida <span class="field-hint">(mostrada ao cliente)</span></label>
+              <input type="text" maxlength="255" v-model="form.delivery_area_note" placeholder="Ex: Ponta Negra, Capim Macio e Lagoa Nova" />
+            </div>
+          </template>
         </div>
       </div>
 
