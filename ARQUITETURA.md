@@ -60,6 +60,15 @@ Isolamento por `restaurant_id` em todas as tabelas de domínio. Reforçado pelo 
 - **Dois tokens no app cliente:** `pf_account_token` (conta, `client-account`, 90 dias) e `pf_token`
   (sessão da mesa, `client`, renovado a cada visita). `POST /client/tables/link` troca o primeiro pelo segundo.
 - `App\Services\Session\TableSessionService` concentra a regra de ocupação da mesa para as duas entradas.
+
+### Entrega (delivery)
+- Por restaurante (`restaurants.delivery_*`), só para cliente com conta. Ver [CONTA_CLIENTE.md](CONTA_CLIENTE.md) §7.
+- Cada entrega é uma **sessão `type=entrega`** (`App\Enums\SessionType`) **sem mesa**: agrupa os pedidos
+  (`origin=delivery`, `table_id` null, divididos por setor na aprovação), guarda endereço, taxa, pagamento
+  e troco, e é acertada no caixa como uma mesa. A taxa entra no total da sessão.
+- Fluxo da mesa usa `AppSession::atTable()` — uma entrega em andamento nunca é tratada como a mesa do cliente.
+- Ciclo em `App\Services\Delivery\DeliveryService` (pedido, aceitar, saiu, entregue, cancelar). A aprovação
+  é a mesma do garçom: `App\Services\Order\OrderApprovalService`.
 - Rotas de operação (garçom/cozinha) exigem papel além do restaurante — ver API.md.
 
 ## Máquina de estados
