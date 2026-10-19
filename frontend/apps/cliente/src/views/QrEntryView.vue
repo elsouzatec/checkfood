@@ -1,42 +1,128 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useAccountStore } from '../stores/account'
+import { maskPhone, isValidPhone } from '../phone'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
+const account = useAccountStore()
+
+const tableToken = route.params.token
+
+// account → logado: entra na mesa com um toque
+// phone   → entrada pelo telefone (com opção de criar conta)
+// login   → telefone já tem conta: pede a senha
+const mode = ref(account.isLoggedIn ? 'account' : 'phone')
 
 const phone = ref('')
 const name  = ref('')
+const password = ref('')
+const showPassword = ref(false)
+const createAccount = ref(false)
+const acceptTerms = ref(false)
 const loading = ref(false)
 const error = ref('')
+const notice = ref('')
+
+const submitLabel = computed(() => {
+  if (loading.value) return 'Entrando...'
+  if (mode.value === 'login') return 'Entrar na mesa'
+  return createAccount.value ? 'Criar conta e pedir' : 'Entrar e Pedir'
+})
 
 function applyPhoneMask(e) {
-  let v = e.target.value.replace(/\D/g, '').slice(0, 11)
-  if (v.length > 6)      v = '(' + v.slice(0,2) + ') ' + v.slice(2,7) + '-' + v.slice(7)
-  else if (v.length > 2) v = '(' + v.slice(0,2) + ') ' + v.slice(2)
-  else if (v.length > 0) v = '(' + v
-  phone.value = v
+  phone.value = maskPhone(e.target.value)
 }
 
-async function handleSubmit() {
-  if (!phone.value || phone.value.replace(/\D/g, '').length < 10) {
-    error.value = 'Informe um telefone válido.'
-    return
-  }
+function tableError(err) {
+  const status = err.response?.status
+  if (status === 404) return 'Mesa não encontrada.'
+  if (status === 409) return err.response.data?.message || 'Mesa ocupada por outro cliente.'
+  return err.response?.data?.message || 'Erro ao conectar. Tente novamente.'
+}
+
+async function enterWithAccount() {
   loading.value = true
   error.value = ''
   try {
-    await auth.createSession(route.params.token, phone.value, name.value)
+    await account.linkTable(tableToken)
     router.push('/cardapio')
   } catch (err) {
-    if (err.response?.status === 409)      error.value = 'Mesa ocupada por outro cliente.'
-    else if (err.response?.status === 404) error.value = 'Mesa não encontrada.'
-    else                                   error.value = 'Erro ao conectar. Tente novamente.'
+    if (err.response?.status === 409 && err.response.data?.other_restaurant) {
+      // Conta é de outro restaurante: aqui o cliente entra pelo telefone.
+      mode.value = 'phone'
+      notice.value = 'Sua conta é de outro restaurante. Aqui, entre com seu telefone.'
+    } else {
+      error.value = tableError(err)
+    }
   } finally {
     loading.value = false
   }
+}
+
+async function handleSubmit() {
+  if (!isValidPhone(phone.value)) {
+    error.value = 'Informe um telefone válido.'
+    return
+  }
+  if (mode.value === 'login' && !password.value) {
+    error.value = 'Digite sua senha.'
+    return
+  }
+  if (mode.value === 'phone' && createAccount.value) {
+    if (name.value.trim().length < 2) { error.value = 'Informe seu nome para criar a conta.'; return }
+    if (password.value.length < 8)    { error.value = 'A senha precisa de pelo menos 8 caracteres.'; return }
+    if (!acceptTerms.value)           { error.value = 'Aceite os termos para criar a conta.'; return }
+  }
+
+  loading.value = true
+  error.value = ''
+  try {
+    if (mode.value === 'login') {
+      await account.login({ phone: phone.value, password: password.value, table_token: tableToken })
+      await account.linkTable(tableToken)
+    } else if (createAccount.value) {
+      await account.register({
+        table_token: tableToken,
+        name: name.value,
+        phone: phone.value,
+        password: password.value,
+        accept_terms: true,
+      })
+      await account.linkTable(tableToken)
+    } else {
+      await auth.createSession(tableToken, phone.value, name.value)
+    }
+    router.push('/cardapio')
+  } catch (err) {
+    const data = err.response?.data
+    if (err.response?.status === 409 && data?.requires_login) {
+      switchToLogin('Este telefone tem conta. Digite sua senha para entrar.')
+    } else if (err.response?.status === 422 && data?.account_exists) {
+      switchToLogin('Você já tem conta aqui. Digite sua senha para entrar.')
+    } else if (mode.value === 'login' && err.response?.status === 401) {
+      error.value = 'Senha incorreta.'
+    } else {
+      error.value = tableError(err)
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+function switchToLogin(message) {
+  mode.value = 'login'
+  createAccount.value = false
+  password.value = ''
+  notice.value = message
+}
+
+async function notMe() {
+  await account.logout()
+  mode.value = 'phone'
 }
 </script>
 
@@ -54,13 +140,35 @@ async function handleSubmit() {
       </div>
     </div>
 
-    <!-- Cartão do formulário -->
-    <div class="entry-card">
+    <!-- Logado: um toque para entrar -->
+    <div v-if="mode === 'account'" class="entry-card">
       <div class="entry-card-handle" aria-hidden="true"></div>
 
-      <h2 class="entry-card-title">Vamos começar!</h2>
-      <p class="entry-card-sub">Informe seu telefone para fazer pedidos</p>
+      <h2 class="entry-card-title">Olá, {{ account.firstName }}!</h2>
+      <p class="entry-card-sub">
+        Entre na mesa com sua conta{{ account.restaurant ? ' do ' + account.restaurant.name : '' }}.
+        Seus pedidos ficam salvos no seu histórico.
+      </p>
 
+      <div v-if="error" class="msg msg-error">{{ error }}</div>
+
+      <button class="entry-submit-btn" :disabled="loading" @click="enterWithAccount">
+        <span v-if="loading" class="btn-spinner"></span>
+        {{ loading ? 'Entrando...' : 'Entrar na mesa' }}
+      </button>
+      <button class="entry-link" @click="notMe">Não é você? <strong>Sair</strong></button>
+    </div>
+
+    <!-- Telefone / senha -->
+    <div v-else class="entry-card">
+      <div class="entry-card-handle" aria-hidden="true"></div>
+
+      <h2 class="entry-card-title">{{ mode === 'login' ? 'Entre com sua conta' : 'Vamos começar!' }}</h2>
+      <p class="entry-card-sub">
+        {{ mode === 'login' ? 'Use o telefone e a senha da sua conta' : 'Informe seu telefone para fazer pedidos' }}
+      </p>
+
+      <div v-if="notice" class="msg msg-warning">{{ notice }}</div>
       <div v-if="error" class="msg msg-error">{{ error }}</div>
 
       <div class="form-group">
@@ -76,8 +184,8 @@ async function handleSubmit() {
         />
       </div>
 
-      <div class="form-group">
-        <label>Seu nome <span class="label-hint">(opcional)</span></label>
+      <div v-if="mode === 'phone'" class="form-group">
+        <label>Seu nome <span v-if="!createAccount" class="label-hint">(opcional)</span></label>
         <input
           v-model="name"
           type="text"
@@ -87,52 +195,48 @@ async function handleSubmit() {
         />
       </div>
 
+      <label v-if="mode === 'phone'" class="terms-check">
+        <input v-model="createAccount" type="checkbox" />
+        <span>Criar minha conta para ver meus pedidos depois</span>
+      </label>
+
+      <div v-if="mode === 'login' || createAccount" class="form-group">
+        <label>{{ mode === 'login' ? 'Senha' : 'Crie uma senha' }}</label>
+        <div class="password-field">
+          <input
+            v-model="password"
+            :type="showPassword ? 'text' : 'password'"
+            :placeholder="mode === 'login' ? 'Sua senha' : 'Mínimo de 8 caracteres'"
+            :autocomplete="mode === 'login' ? 'current-password' : 'new-password'"
+            @keyup.enter="handleSubmit"
+          />
+          <button type="button" class="password-toggle" @click="showPassword = !showPassword">
+            {{ showPassword ? 'Ocultar' : 'Mostrar' }}
+          </button>
+        </div>
+      </div>
+
+      <label v-if="mode === 'phone' && createAccount" class="terms-check">
+        <input v-model="acceptTerms" type="checkbox" />
+        <span>Li e aceito os <router-link to="/termos" target="_blank">termos de uso e a política de privacidade</router-link>.</span>
+      </label>
+
       <button class="entry-submit-btn" :disabled="loading" @click="handleSubmit">
         <span v-if="loading" class="btn-spinner"></span>
-        {{ loading ? 'Entrando...' : 'Entrar e Pedir' }}
+        {{ submitLabel }}
       </button>
+
+      <template v-if="mode === 'login'">
+        <p class="entry-note">Esqueceu a senha? Peça ao atendente para redefinir seu acesso.</p>
+        <button class="entry-link" @click="mode = 'phone'; notice = ''">Usar outro telefone</button>
+      </template>
     </div>
 
   </div>
 </template>
 
 <style scoped>
-.entry-screen {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--sidebar-bg);
-  overflow: hidden;
-}
-
-/* ── Zona de identidade ── */
-.entry-brand {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 24px 32px;
-  text-align: center;
-  position: relative;
-}
-
-.entry-logo {
-  font-size: 44px;
-  font-weight: var(--fw-black);
-  color: var(--brand-accent);
-  letter-spacing: -1px;
-  line-height: 1;
-  margin-bottom: 12px;
-}
-
-.entry-tagline {
-  font-size: var(--fs-md);
-  color: rgba(255, 255, 255, 0.70);
-  font-weight: var(--fw-medium);
-}
-
-/* Decoração flutuante */
+/* Decoração flutuante da zona de identidade */
 .entry-deco {
   position: absolute;
   inset: 0;
@@ -153,68 +257,4 @@ async function handleSubmit() {
   0%, 100% { transform: translateY(0) rotate(-4deg); }
   50%       { transform: translateY(-10px) rotate(4deg); }
 }
-
-/* ── Cartão do formulário ── */
-.entry-card {
-  background: var(--surface);
-  border-radius: 24px 24px 0 0;
-  padding: 12px 24px calc(32px + env(safe-area-inset-bottom, 0px));
-  animation: card-slide-up var(--dur-slow) var(--ease-spring) both;
-}
-
-@keyframes card-slide-up {
-  from { transform: translateY(40px); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
-}
-
-.entry-card-handle {
-  width: 40px;
-  height: 4px;
-  background: var(--border-default);
-  border-radius: 2px;
-  margin: 0 auto 20px;
-}
-
-.entry-card-title {
-  font-size: var(--fs-xl);
-  font-weight: var(--fw-bold);
-  color: var(--text-primary);
-  margin-bottom: 4px;
-}
-
-.entry-card-sub {
-  font-size: var(--fs-sm);
-  color: var(--text-muted);
-  margin-bottom: 20px;
-  line-height: 1.4;
-}
-
-/* Botão de submit */
-.entry-submit-btn {
-  width: 100%;
-  padding: 15px;
-  background: var(--brand-accent);
-  color: #FFFFFF;
-  border: none;
-  border-radius: var(--radius);
-  font-size: var(--fs-lg);
-  font-weight: var(--fw-bold);
-  font-family: var(--font-base);
-  cursor: pointer;
-  touch-action: manipulation;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  box-shadow: 0 4px 16px rgba(221, 111, 45, 0.30);
-  transition:
-    background var(--dur-normal) var(--ease-out),
-    transform var(--dur-instant) var(--ease-out);
-  margin-top: 4px;
-}
-.entry-submit-btn:active:not(:disabled) {
-  background: var(--brand-accent-hover);
-  transform: scale(0.98);
-}
-.entry-submit-btn:disabled { opacity: 0.65; cursor: not-allowed; }
 </style>

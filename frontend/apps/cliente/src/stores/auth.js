@@ -32,21 +32,28 @@ export const useAuthStore = defineStore('auth', () => {
       name: name || undefined,
     })
 
-    localStorage.setItem('pf_token', res.data.token)
-    localStorage.setItem('pf_user', JSON.stringify(res.data.user))
-    localStorage.setItem('pf_session', JSON.stringify(res.data.session))
-    localStorage.setItem('pf_table', JSON.stringify(res.data.table))
+    return applySession(res.data)
+  }
 
-    user.value = res.data.user
-    session.value = res.data.session
-    table.value = res.data.table
+  // Guarda a sessão da mesa. Mesmo formato vindo de POST /sessions (entrada
+  // pelo telefone) e de POST /client/tables/link (entrada pela conta).
+  function applySession(data) {
+    localStorage.setItem('pf_token', data.token)
+    localStorage.setItem('pf_user', JSON.stringify(data.user))
+    localStorage.setItem('pf_session', JSON.stringify(data.session))
+    localStorage.setItem('pf_table', JSON.stringify(data.table))
 
-    if (res.data.restaurant) {
-      localStorage.setItem('pf_restaurant', JSON.stringify(res.data.restaurant))
-      restaurant.value = res.data.restaurant
+    user.value = data.user
+    session.value = data.session
+    table.value = data.table
+
+    if (data.restaurant) {
+      localStorage.setItem('pf_restaurant', JSON.stringify(data.restaurant))
+      localStorage.setItem('pf_last_restaurant', JSON.stringify(data.restaurant))
+      restaurant.value = data.restaurant
     }
 
-    return res.data
+    return data
   }
 
   // Permite outras views (MenuView) atualizarem o restaurante após buscar
@@ -116,6 +123,7 @@ export const useAuthStore = defineStore('auth', () => {
     restaurantId,
     sessionChecked,
     createSession,
+    applySession,
     checkSession,
     setRestaurant,
     logout,

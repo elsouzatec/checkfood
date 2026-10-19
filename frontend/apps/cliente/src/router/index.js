@@ -8,6 +8,13 @@ import AccountView       from '../views/AccountView.vue'
 import FeedbackView      from '../views/FeedbackView.vue'
 import NoTableView       from '../views/NoTableView.vue'
 import PaymentView       from '../views/PaymentView.vue'
+import RestaurantLandingView from '../views/RestaurantLandingView.vue'
+import AccountLoginView      from '../views/AccountLoginView.vue'
+import AccountRegisterView   from '../views/AccountRegisterView.vue'
+import AccountHomeView       from '../views/AccountHomeView.vue'
+import AccountOrdersView     from '../views/AccountOrdersView.vue'
+import AccountProfileView    from '../views/AccountProfileView.vue'
+import TermsView             from '../views/TermsView.vue'
 
 const routes = [
   { path: '/mesa/:token',  name: 'qr-entry', component: QrEntryView },
@@ -18,6 +25,14 @@ const routes = [
   { path: '/pagamento',    name: 'payment',  component: PaymentView,       meta: { requiresSession: true } },
   { path: '/feedback',     name: 'feedback', component: FeedbackView },
   { path: '/sem-mesa',     name: 'no-table', component: NoTableView },
+  // Conta do cliente (por restaurante)
+  { path: '/r/:slug',              name: 'restaurant',      component: RestaurantLandingView },
+  { path: '/entrar',               name: 'account-login',    component: AccountLoginView,    meta: { guestOnly: true } },
+  { path: '/cadastro',             name: 'account-register', component: AccountRegisterView, meta: { guestOnly: true } },
+  { path: '/minha-conta',          name: 'account-home',     component: AccountHomeView,     meta: { requiresAccount: true } },
+  { path: '/minha-conta/pedidos',  name: 'account-orders',   component: AccountOrdersView,   meta: { requiresAccount: true } },
+  { path: '/minha-conta/perfil',   name: 'account-profile',  component: AccountProfileView,  meta: { requiresAccount: true } },
+  { path: '/termos',               name: 'terms',            component: TermsView },
   { path: '/:pathMatch(.*)*', redirect: '/sem-mesa' },
 ]
 
@@ -29,6 +44,18 @@ const router = createRouter({
 var sessionCheckDone = false
 
 router.beforeEach(async (to, from, next) => {
+  // Conta do cliente: área logada exige a conta; landing/login/cadastro com
+  // a conta já aberta vão direto para ela.
+  var hasAccount = !!localStorage.getItem('pf_account_token')
+  if (to.meta.requiresAccount && !hasAccount) {
+    next({ name: 'account-login' })
+    return
+  }
+  if (hasAccount && (to.meta.guestOnly || to.name === 'no-table')) {
+    next({ name: 'account-home' })
+    return
+  }
+
   var token = localStorage.getItem('pf_token')
 
   if (!token && to.meta.requiresSession) {

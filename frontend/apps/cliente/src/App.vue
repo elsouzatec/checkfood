@@ -17,11 +17,9 @@ const callLoading     = ref(false)
 let callTimer = null
 let pollTimer = null
 
+// Header da mesa só nas telas da sessão — a área da conta tem o próprio header.
 const showHeader = computed(() => {
-  return auth.isAuthenticated
-    && route.name !== 'qr-entry'
-    && route.name !== 'no-table'
-    && route.name !== 'feedback'
+  return auth.isAuthenticated && !!route.meta.requiresSession
 })
 
 const showCallBtn = computed(() => hasWaiter.value && showHeader.value)
@@ -103,9 +101,9 @@ onUnmounted(() => {
       </div>
 
       <div class="header-right">
-        <span v-if="firstName" class="header-user-name" :title="auth.user?.name">
-          {{ firstName }}
-        </span>
+        <router-link to="/conta" class="header-user-name" :title="auth.user?.name || 'Minha conta'">
+          {{ firstName || 'Conta' }}
+        </router-link>
       </div>
     </header>
 

@@ -204,3 +204,286 @@ body {
 }
 
 /* Telas fullscreen em shared/fullscreen.css + shared/forms.css (.form-group--dark) */
+
+/* ============================================================
+   Telas de entrada — QR da mesa, landing, login, cadastro.
+   Faixa de marca (verde) em cima + cartão branco que sobe.
+============================================================ */
+.entry-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--sidebar-bg);
+  overflow: hidden;
+}
+.entry-brand {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px 32px;
+  text-align: center;
+  position: relative;
+}
+.entry-logo {
+  font-size: 44px;
+  font-weight: var(--fw-black);
+  color: var(--brand-accent);
+  letter-spacing: -1px;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+.entry-logo-img {
+  width: 76px;
+  height: 76px;
+  border-radius: var(--radius-lg);
+  object-fit: cover;
+  background: var(--surface);
+  margin-bottom: 14px;
+}
+.entry-restaurant-name {
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-black);
+  color: #FFFFFF;
+  line-height: 1.15;
+  margin-bottom: 6px;
+}
+.entry-tagline {
+  font-size: var(--fs-md);
+  color: rgba(255, 255, 255, 0.70);
+  font-weight: var(--fw-medium);
+}
+.entry-card {
+  background: var(--surface);
+  border-radius: 24px 24px 0 0;
+  padding: 12px 24px calc(32px + env(safe-area-inset-bottom, 0px));
+  animation: card-slide-up var(--dur-slow) var(--ease-spring) both;
+}
+@keyframes card-slide-up {
+  from { transform: translateY(40px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.entry-card-handle {
+  width: 40px;
+  height: 4px;
+  background: var(--border-default);
+  border-radius: 2px;
+  margin: 0 auto 20px;
+}
+.entry-card-title {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.entry-card-sub {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+.entry-submit-btn {
+  width: 100%;
+  padding: 15px;
+  background: var(--brand-accent);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  font-family: var(--font-base);
+  cursor: pointer;
+  touch-action: manipulation;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(221, 111, 45, 0.30);
+  transition:
+    background var(--dur-normal) var(--ease-out),
+    transform var(--dur-instant) var(--ease-out);
+  margin-top: 4px;
+}
+.entry-submit-btn:active:not(:disabled) {
+  background: var(--brand-accent-hover);
+  transform: scale(0.98);
+}
+.entry-submit-btn:disabled { opacity: 0.65; cursor: not-allowed; }
+.entry-secondary-btn {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  background: var(--surface);
+  color: var(--text-primary);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  font-family: var(--font-base);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.entry-secondary-btn:active { transform: scale(0.98); }
+.entry-link {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-family: var(--font-base);
+  text-align: center;
+  cursor: pointer;
+  padding: 6px;
+}
+.entry-link strong { color: var(--brand-accent); }
+.entry-note {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-top: 12px;
+  text-align: center;
+}
+.terms-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 4px 0 16px;
+  cursor: pointer;
+}
+.terms-check input { margin-top: 2px; width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--brand-accent); }
+.terms-check a { color: var(--brand-accent); font-weight: var(--fw-semibold); }
+.password-field { position: relative; }
+.password-field input { padding-right: 70px; }
+.password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  font-family: var(--font-base);
+  cursor: pointer;
+  padding: 6px;
+}
+
+/* ============================================================
+   Área da conta do cliente (/minha-conta)
+   Header único com a marca do restaurante + conteúdo em cards.
+============================================================ */
+.acc-header {
+  background: var(--sidebar-bg);
+  color: #FFFFFF;
+  padding: 18px 20px 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 3px solid var(--sidebar-active-border);
+}
+.acc-header-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius);
+  object-fit: cover;
+  background: var(--surface);
+  flex-shrink: 0;
+}
+.acc-header-text { flex: 1; min-width: 0; }
+.acc-header-restaurant {
+  font-size: var(--fs-xs);
+  color: rgba(255, 255, 255, 0.70);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.acc-header-title {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-black);
+  line-height: 1.2;
+}
+.acc-header-back {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #FFFFFF;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-pill);
+  font-size: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.acc-page {
+  padding: 18px 16px calc(32px + env(safe-area-inset-bottom, 0px));
+}
+.acc-section-title {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 22px 4px 10px;
+}
+.acc-action {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+  margin-bottom: 10px;
+  text-align: left;
+  font-family: var(--font-base);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.acc-action:active { transform: scale(0.98); }
+.acc-action--primary { border: 2px solid var(--brand-accent); }
+.acc-action-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius);
+  background: var(--brand-accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.acc-action-body { flex: 1; min-width: 0; }
+.acc-action-title {
+  display: block;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  color: var(--text-primary);
+}
+.acc-action-desc {
+  display: block;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.acc-action-arrow { color: var(--text-muted); font-size: 18px; }
+img.acc-action-icon { object-fit: cover; }
+
+/* Nome no header da mesa leva à conta (/conta): vira um "chip" tocável. */
+a.header-user-name {
+  display: inline-block;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+}

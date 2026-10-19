@@ -1,125 +1,127 @@
 <script setup>
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
+import { useAccountStore } from '../stores/account'
+import { maskPhone } from '../phone'
 
+// /conta — dentro da mesa. Cliente que entrou só com o telefone cria a conta
+// aqui sem sair da visita: os pedidos desta visita já entram no histórico.
 var router = useRouter()
+var auth = useAuthStore()
+var account = useAccountStore()
+
+var name = ref(auth.user?.name && auth.user.name !== 'Cliente' ? auth.user.name : '')
+var password = ref('')
+var showPassword = ref(false)
+var acceptTerms = ref(false)
+var loading = ref(false)
+var error = ref('')
+var created = ref(false)
+
+// Já tem conta (entrou pela conta, ou criou em outro aparelho).
+var hasAccount = computed(function() {
+  return account.isLoggedIn || !!auth.user?.registered_at
+})
+
+async function submit() {
+  if (name.value.trim().length < 2) { error.value = 'Informe seu nome.'; return }
+  if (password.value.length < 8)    { error.value = 'A senha precisa de pelo menos 8 caracteres.'; return }
+  if (!acceptTerms.value)           { error.value = 'Aceite os termos para criar a conta.'; return }
+
+  loading.value = true
+  error.value = ''
+  try {
+    await account.upgradeFromTable({ name: name.value.trim(), password: password.value, accept_terms: true })
+    created.value = true
+  } catch (err) {
+    error.value = err.response?.data?.message || 'Não foi possível criar a conta.'
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <template>
-  <div class="account-page">
-    <div class="account-card">
-      <div class="account-icon">👤</div>
-      <h2 class="account-title">Área do Cliente</h2>
-      <p class="account-desc">
-        Em breve você poderá criar sua conta e ter acesso a
-        benefícios exclusivos como cashback, histórico de pedidos
-        e promoções especiais.
-      </p>
+  <div class="page">
+    <div class="card account-card">
+      <template v-if="created">
+        <div class="account-icon">🎉</div>
+        <h2 class="account-title">Conta criada!</h2>
+        <p class="account-desc">
+          Os pedidos desta visita já estão no seu histórico. Na próxima vez, é só entrar
+          com seu telefone e senha.
+        </p>
+        <button class="btn btn-primary" @click="router.push('/cardapio')">Voltar ao cardápio</button>
+      </template>
 
-      <div class="perks-list">
-        <div class="perk-item">
-          <span class="perk-icon">💰</span>
-          <span>Cashback em pedidos</span>
-        </div>
-        <div class="perk-item">
-          <span class="perk-icon">📋</span>
-          <span>Histórico de pedidos</span>
-        </div>
-        <div class="perk-item">
-          <span class="perk-icon">🎁</span>
-          <span>Promoções exclusivas</span>
-        </div>
-        <div class="perk-item">
-          <span class="perk-icon">⭐</span>
-          <span>Programa de fidelidade</span>
-        </div>
-      </div>
+      <template v-else-if="hasAccount">
+        <div class="account-icon">👤</div>
+        <h2 class="account-title">Sua conta</h2>
+        <p class="account-desc">Veja o histórico dos seus pedidos e seus dados.</p>
+        <button v-if="account.isLoggedIn" class="btn btn-primary" @click="router.push('/minha-conta')">Abrir minha conta</button>
+        <button v-else class="btn btn-primary" @click="router.push({ path: '/entrar', query: { r: auth.restaurant?.slug } })">Entrar na conta</button>
+      </template>
 
-      <div class="coming-badge">Em breve</div>
+      <template v-else>
+        <div class="account-icon">👤</div>
+        <h2 class="account-title">Crie sua conta</h2>
+        <p class="account-desc">
+          Guarde o histórico dos seus pedidos e entre na mesa com um toque nas próximas visitas.
+        </p>
 
-      <button class="back-btn" @click="router.push('/')">← Voltar ao início</button>
+        <div v-if="error" class="msg msg-error">{{ error }}</div>
+
+        <div class="form-group">
+          <label>Nome</label>
+          <input v-model="name" type="text" placeholder="Seu nome" autocomplete="name" />
+        </div>
+        <div class="form-group">
+          <label>Crie uma senha</label>
+          <div class="password-field">
+            <input
+              v-model="password"
+              :type="showPassword ? 'text' : 'password'"
+              placeholder="Mínimo de 8 caracteres"
+              autocomplete="new-password"
+            />
+            <button type="button" class="password-toggle" @click="showPassword = !showPassword">
+              {{ showPassword ? 'Ocultar' : 'Mostrar' }}
+            </button>
+          </div>
+        </div>
+        <label class="terms-check">
+          <input v-model="acceptTerms" type="checkbox" />
+          <span>Li e aceito os <router-link to="/termos" target="_blank">termos de uso e a política de privacidade</router-link>.</span>
+        </label>
+
+        <button class="btn btn-primary" :disabled="loading" @click="submit">
+          {{ loading ? 'Criando...' : 'Criar conta' }}
+        </button>
+        <p class="entry-note">Seu telefone ({{ maskPhone(auth.user?.phone) }}) será o login da conta.</p>
+      </template>
     </div>
   </div>
 </template>
 
 <style scoped>
-.account-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(180deg, #fff 0%, #f5f5f7 100%);
-  padding: 20px;
-}
 .account-card {
-  background: #fff;
-  border-radius: 20px;
-  padding: 40px 28px;
-  width: 100%;
-  max-width: 400px;
+  padding: 28px 20px;
   text-align: center;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
 }
-.account-icon {
-  font-size: 48px;
-  margin-bottom: 12px;
-}
+.account-card .form-group,
+.account-card .terms-check { text-align: left; }
+.account-icon { font-size: 44px; margin-bottom: 8px; }
 .account-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: #1a1a2e;
-  margin: 0 0 8px;
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  color: var(--text-primary);
+  margin-bottom: 6px;
 }
 .account-desc {
-  font-size: 14px;
-  color: #999;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
   line-height: 1.5;
-  margin-bottom: 24px;
-}
-.perks-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 24px;
-  text-align: left;
-}
-.perk-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  background: #f8f8fa;
-  border-radius: 10px;
-  font-size: 14px;
-  color: #333;
-  font-weight: 500;
-}
-.perk-icon {
-  font-size: 20px;
-  flex-shrink: 0;
-}
-.coming-badge {
-  display: inline-block;
-  background: rgba(52,152,219,0.1);
-  color: #3498db;
-  padding: 6px 20px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
   margin-bottom: 20px;
-}
-.back-btn {
-  background: none;
-  border: none;
-  color: #999;
-  font-size: 14px;
-  cursor: pointer;
-  padding: 10px;
-  font-family: inherit;
-  touch-action: manipulation;
-}
-.back-btn:hover {
-  color: #e63946;
 }
 </style>
