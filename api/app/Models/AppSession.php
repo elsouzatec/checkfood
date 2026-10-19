@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\SessionStatus;
+use App\Enums\SessionType;
 use App\Models\Concerns\BelongsToRestaurant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,16 +18,29 @@ class AppSession extends Model
 
     protected $fillable = [
         'restaurant_id', 'table_id', 'user_id', 'waiter_id',
-        'session_token', 'device_id', 'guest_name', 'status',
+        'session_token', 'device_id', 'guest_name', 'status', 'type',
         'payment_method_chosen', 'closed_at', 'at_cashier_at',
+        'delivery_address', 'delivery_fee', 'delivery_notes', 'change_for',
+        'accepted_at', 'dispatched_at', 'delivered_at',
+    ];
+
+    protected $attributes = [
+        'type' => 'mesa',
     ];
 
     protected function casts(): array
     {
         return [
-            'status'        => SessionStatus::class,
-            'closed_at'     => 'datetime',
-            'at_cashier_at' => 'datetime',
+            'status'           => SessionStatus::class,
+            'type'             => SessionType::class,
+            'closed_at'        => 'datetime',
+            'at_cashier_at'    => 'datetime',
+            'delivery_address' => 'array',
+            'delivery_fee'     => 'decimal:2',
+            'change_for'       => 'decimal:2',
+            'accepted_at'      => 'datetime',
+            'dispatched_at'    => 'datetime',
+            'delivered_at'     => 'datetime',
         ];
     }
 
@@ -53,6 +67,43 @@ class AppSession extends Model
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class, 'session_id');
+    }
+
+    // ─── Tipo ───────────────────────────────────────────────
+
+    public function isDelivery(): bool
+    {
+        return $this->type === SessionType::ENTREGA;
+    }
+
+    /** Só visitas a mesas — a entrega também é sessão, mas sem mesa. */
+    public function scopeAtTable($query)
+    {
+        return $query->where('type', SessionType::MESA->value);
+    }
+
+    public function scopeDelivery($query)
+    {
+        return $query->where('type', SessionType::ENTREGA->value);
+    }
+
+    /** Endereço de entrega numa linha (rua, número, complemento — bairro). */
+    public function deliveryAddressLine(): ?string
+    {
+        $a = $this->delivery_address;
+        if (!$a) {
+            return null;
+        }
+
+        $line = trim(($a['street'] ?? '') . ', ' . ($a['number'] ?? ''), ', ');
+        if (!empty($a['complement'])) {
+            $line .= ' — ' . $a['complement'];
+        }
+        if (!empty($a['district'])) {
+            $line .= ' · ' . $a['district'];
+        }
+
+        return $line;
     }
 
     // ─── Estado helpers ─────────────────────────────────────

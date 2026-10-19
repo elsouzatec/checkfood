@@ -23,6 +23,7 @@ class Restaurant extends Model
         'cashier_mode',
         'mercadopago_access_token', 'mercadopago_webhook_secret', 'mercadopago_public_key',
         'is_active',
+        'delivery_enabled', 'delivery_fee', 'delivery_min_order', 'delivery_eta_minutes', 'delivery_area_note',
     ];
 
     // Nunca serializados para JSON — credenciais são write-only via endpoint dedicado.
@@ -45,6 +46,10 @@ class Restaurant extends Model
         'cashier_mode'                 => 'boolean',
         'mercadopago_access_token'     => 'encrypted',
         'mercadopago_webhook_secret'   => 'encrypted',
+        'delivery_enabled'             => 'boolean',
+        'delivery_fee'                 => 'decimal:2',
+        'delivery_min_order'           => 'decimal:2',
+        'delivery_eta_minutes'         => 'integer',
     ];
 
     public function users(): HasMany
@@ -75,6 +80,18 @@ class Restaurant extends Model
     public function subscription(): HasOne
     {
         return $this->hasOne(Subscription::class);
+    }
+
+    /** Regras de entrega expostas ao app do cliente. */
+    public function deliveryConfig(): array
+    {
+        return [
+            'enabled'     => (bool) $this->delivery_enabled,
+            'fee'         => (float) $this->delivery_fee,
+            'min_order'   => (float) $this->delivery_min_order,
+            'eta_minutes' => $this->delivery_eta_minutes,
+            'area_note'   => $this->delivery_area_note,
+        ];
     }
 
     /**

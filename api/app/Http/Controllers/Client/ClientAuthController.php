@@ -182,7 +182,7 @@ class ClientAuthController extends Controller
             return response()->json(['message' => 'Você já tem conta neste restaurante.'], 422);
         }
 
-        $currentSession = AppSession::where('user_id', $user->id)
+        $currentSession = AppSession::atTable()->where('user_id', $user->id)
             ->whereIn('status', [SessionStatus::ACTIVE->value, SessionStatus::CLOSING->value])
             ->latest()
             ->first();

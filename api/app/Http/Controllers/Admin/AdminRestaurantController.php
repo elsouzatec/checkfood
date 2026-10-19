@@ -77,6 +77,11 @@ class AdminRestaurantController extends Controller
             'tip_enabled'                  => 'sometimes|boolean',
             'tip_default_percent'          => 'sometimes|numeric|min:0|max:100',
             'print_enabled'                => 'sometimes|boolean',
+            'delivery_enabled'             => 'sometimes|boolean',
+            'delivery_fee'                 => 'sometimes|numeric|min:0|max:1000',
+            'delivery_min_order'           => 'sometimes|numeric|min:0|max:10000',
+            'delivery_eta_minutes'         => 'sometimes|nullable|integer|min:5|max:300',
+            'delivery_area_note'           => 'sometimes|nullable|string|max:255',
         ]);
 
         // $request->boolean() garante conversão correta independente do formato recebido
@@ -85,6 +90,9 @@ class AdminRestaurantController extends Controller
         }
         if ($request->has('tip_enabled')) {
             $data['tip_enabled'] = $request->boolean('tip_enabled');
+        }
+        if ($request->has('delivery_enabled')) {
+            $data['delivery_enabled'] = $request->boolean('delivery_enabled');
         }
         if ($request->has('print_enabled')) {
             $data['print_enabled'] = $request->boolean('print_enabled');
