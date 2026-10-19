@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Events\ConnectionEstablished;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -17,6 +19,27 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureRateLimiters();
+        $this->configureSqlite();
+    }
+
+    /**
+     * As buscas por telefone usam REGEXP_REPLACE (só dígitos), que o MariaDB
+     * de produção tem e o SQLite (testes e ambiente local) não: registra um
+     * equivalente quando a conexão é SQLite.
+     */
+    private function configureSqlite(): void
+    {
+        Event::listen(ConnectionEstablished::class, function (ConnectionEstablished $event) {
+            if ($event->connection->getDriverName() !== 'sqlite') {
+                return;
+            }
+
+            $event->connection->getPdo()->sqliteCreateFunction(
+                'REGEXP_REPLACE',
+                fn ($subject, $pattern, $replacement) => preg_replace('#'.$pattern.'#u', $replacement, (string) $subject),
+                3
+            );
+        });
     }
 
     private function configureRateLimiters(): void
