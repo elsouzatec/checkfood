@@ -4,6 +4,7 @@ use App\Http\Controllers\Caixa\CaixaController;
 use App\Http\Controllers\Caixa\CashierShiftController;
 use App\Http\Controllers\WaiterSessionController;
 use App\Http\Controllers\Admin\AdminCategoryController;
+use App\Http\Controllers\Admin\AdminClientController;
 use App\Http\Controllers\Admin\AdminFeedbackController;
 use App\Http\Controllers\Admin\AdminIngredientController;
 use App\Http\Controllers\Admin\AdminPerformanceController;
@@ -14,6 +15,8 @@ use App\Http\Controllers\Admin\AdminRestaurantController;
 use App\Http\Controllers\Admin\AdminTableController;
 use App\Http\Controllers\Admin\AdminTeamPerformanceController;
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Client\ClientAccountController;
+use App\Http\Controllers\Client\ClientAuthController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MenuController;
@@ -43,6 +46,12 @@ Route::post('/sessions', [SessionController::class, 'store']);
 Route::get('/restaurants/by-slug/{slug}',      [MenuController::class, 'bySlug']);
 Route::get('/restaurants/{restaurantId}/menu', [MenuController::class, 'index']);
 Route::post('/auth/login', [LoginController::class, 'login'])
+    ->middleware('throttle:login');
+
+// Conta do cliente (por restaurante) — cadastro e login públicos
+Route::post('/client/register', [ClientAuthController::class, 'register'])
+    ->middleware('throttle:client-register');
+Route::post('/client/login', [ClientAuthController::class, 'login'])
     ->middleware('throttle:login');
 
 // Webhook Mercado Pago — público, sem auth
@@ -120,6 +129,17 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('/feedbacks/check/{sessionId}', [FeedbackController::class, 'check']);
     Route::post('/feedbacks',                  [FeedbackController::class, 'store']);
 
+    // ── Conta do cliente ── (role: client) — /me, /orders e /tables/link
+    // exigem conta; /account converte o cliente anônimo da mesa em conta.
+    Route::middleware('role:client')->prefix('client')->group(function () {
+        Route::post('/account',     [ClientAuthController::class, 'upgrade']);
+        Route::get('/me',           [ClientAccountController::class, 'show']);
+        Route::put('/me',           [ClientAccountController::class, 'update']);
+        Route::delete('/me',        [ClientAccountController::class, 'destroy']);
+        Route::get('/orders',       [ClientAccountController::class, 'orders']);
+        Route::post('/tables/link', [ClientAccountController::class, 'linkTable']);
+    });
+
     // ── App Caixa ── (roles: cashier, manager)
     Route::middleware('role:cashier,manager')->prefix('caixa')->group(function () {
         Route::get('/queue',                                  [CaixaController::class, 'queue']);
@@ -186,6 +206,10 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::apiResource('tables', AdminTableController::class);
 
         Route::apiResource('users', AdminUserController::class);
+
+        // Clientes (contas) — gerente redefine acesso ("esqueci a senha")
+        Route::get('/clients',                      [AdminClientController::class, 'index']);
+        Route::post('/clients/{user}/reset-account', [AdminClientController::class, 'resetAccount']);
 
         Route::get('/reports/today',  [AdminReportController::class, 'today']);
         Route::get('/reports/period', [AdminReportController::class, 'period']);
