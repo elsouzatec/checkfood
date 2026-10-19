@@ -52,7 +52,8 @@ class SessionController extends Controller
             $sessionUser  = User::find($activeSession->user_id);
             $sessionPhone = preg_replace('/[^0-9]/', '', $sessionUser->phone ?? '');
 
-            if ($sessionPhone === $phoneDigits) {
+            // Só cliente retoma pelo telefone — nunca emitir token de funcionário aqui.
+            if ($sessionUser->isClient() && $sessionPhone === $phoneDigits) {
                 $token   = $sessionUser->createToken('client')->plainTextToken;
                 $payment = $activeSession->isClosing()
                     ? Payment::where('session_id', $activeSession->id)->latest()->first()
@@ -79,7 +80,10 @@ class SessionController extends Controller
             return response()->json(['message' => 'Mesa ocupada por outro cliente.'], 409);
         }
 
+        // Só clientes: o telefone de um funcionário digitado na mesa não pode
+        // render um token com o papel dele (gerente → /api/admin).
         $user = User::where('restaurant_id', $restaurantId)
+            ->where('role', 'client')
             ->where(function ($q) use ($request, $phoneDigits) {
                 $q->where('phone', $request->phone)
                   ->orWhereRaw("REGEXP_REPLACE(phone, '[^0-9]', '') = ?", [$phoneDigits]);
