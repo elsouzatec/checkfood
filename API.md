@@ -14,7 +14,9 @@ Fonte: `api/routes/api.php`.
 
 | Método | Rota | Descrição |
 |---|---|---|
-| POST | `/sessions` | Abre sessão de mesa (cliente via QR). |
+| POST | `/sessions` | Abre sessão de mesa (cliente via QR, só telefone). Telefone que tem conta → 409 `requires_login`. Só autentica `role=client`. |
+| POST | `/client/register` | Cria conta de cliente no restaurante (`restaurant_slug` **ou** `table_token`, `name`, `phone`, `password` ≥ 8, `accept_terms`). Telefone já com conta → 422 `account_exists`. Throttle `client-register`. |
+| POST | `/client/login` | Login da conta (`phone`, `password`, `restaurant_slug?`/`table_token?`). Senha confere em mais de um restaurante → 409 `requires_restaurant` + `restaurants[]`. Throttle `login`. |
 | GET | `/restaurants/by-slug/{slug}` | Resolve restaurante pelo slug (usado no login). |
 | GET | `/restaurants/{restaurantId}/menu` | Cardápio público. |
 | POST | `/webhooks/mercadopago` | Webhook de pagamento. Throttle `webhook`. |
@@ -44,6 +46,28 @@ Fonte: `api/routes/api.php`.
 
 ### Configurações / Feedback
 - `GET /restaurant/settings` (staff) · `GET /feedbacks/check/{sessionId}` · `POST /feedbacks`
+
+### Papéis nas rotas de operação
+As rotas acima de garçom/cozinha exigem papel (o cliente da mesa tem token do mesmo restaurante):
+`/orders/pending|validate|quick-deliver|deliver|pick-and-deliver|cancel`, `DELETE /orders/{order}/items/*`,
+`/waiter-calls/pending|dismiss` e `/waiter/*` → `waiter,manager`; `/orders/kitchen|start|ready(PATCH)` →
+`kitchen,manager`; `GET /orders/ready` → `waiter,kitchen,manager`; `GET /orders/{order}`, `/tables*`,
+`/restaurant/settings` → `waiter,kitchen,cashier,manager`.
+
+## Conta do cliente — `role:client`, prefixo `/client`
+
+Conta **por restaurante** (ver [CONTA_CLIENTE.md](CONTA_CLIENTE.md)). Token da conta: nome `client-account`, 90 dias.
+
+| Método | Rota | Descrição |
+|---|---|---|
+| POST | `/client/account` | Cliente anônimo da mesa (token da sessão) cria a senha. Pedidos da visita atual entram no histórico. |
+| GET | `/client/me` | Conta + restaurante + `active_session` (mesa aberta, se houver). |
+| PUT | `/client/me` | `name`; troca de senha com `current_password` + `password` (derruba os outros aparelhos). |
+| DELETE | `/client/me` | Exclui a conta (exige `password`; 409 com mesa aberta): anonimiza nome/telefone/senha. |
+| GET | `/client/orders` | Histórico paginado (a partir de `history_visible_from`). |
+| POST | `/client/tables/link` | `table_token` → abre/retoma a sessão da mesa; mesma resposta de `POST /sessions`. Mesa de outro restaurante → 409 `other_restaurant`. |
+
+`/client/me` (PUT/DELETE), `/client/orders` e `/client/tables/link` exigem conta (403 para o cliente anônimo da mesa).
 
 ## Caixa — `role:cashier,manager`, prefixo `/caixa`
 
@@ -80,6 +104,7 @@ Fonte: `api/routes/api.php`.
 - **Produtos:** `POST /admin/products/{product}/image` · `apiResource /admin/products`
 - **Mesas:** `GET /admin/tables/{table}/detail` · `POST /admin/tables/{table}/force-release` · `POST /admin/tables/bulk` · `GET /admin/tables/{table}/qrcode` · `apiResource /admin/tables`
 - **Usuários:** `apiResource /admin/users`
+- **Clientes:** `GET /admin/clients?search=&only_accounts=1` · `POST /admin/clients/{user}/reset-account` (apaga a senha e desconecta — recuperação de acesso)
 - **Relatórios:** `GET /admin/reports/today` · `GET /admin/reports/period`
 - **Desempenho:** `GET /admin/performance` · `GET /admin/team-performance`
 - **Feedbacks:** `GET /admin/feedbacks`
