@@ -43,7 +43,7 @@ npm run dev                      # dev server
 npm run build                    # build de produção (dist/)
 ```
 
-Não há suíte de testes (apenas stubs `ExampleTest`). Valide mudanças de API com `route:list` + tinker.
+Testes: `php artisan test` (SQLite em memória — o `TestCase` aborta se não for; registra `REGEXP_REPLACE` para as buscas por telefone). Valide também com `route:list`.
 
 ## Arquitetura — pontos essenciais
 
@@ -52,7 +52,9 @@ Não há suíte de testes (apenas stubs `ExampleTest`). Valide mudanças de API 
 - **Autenticação:** token Bearer (Sanctum). Login em `POST /api/auth/login`: `phone` (único entre staff na plataforma — **dispensa** código de restaurante), `apelido`+`restaurant_slug` (apelido só é único por restaurante), ou `email` (global — super admin). Ver `LoginController`.
 - **Rotas:** `routes/api.php`. **Regra de ouro:** rotas de nome fixo ANTES de wildcards `{param}`. Grupos por papel via middleware `role:` (`EnsureRole`): `/api/admin` (manager), `/api/caixa` (cashier,manager), `/api/platform` (super_admin).
 - **Máquina de estados de pedido:** `App\Enums\OrderStatus` com `allowedTransitions()`/`canTransitionTo()`. Use `Order::transitionTo()`.
-- **Sessões de mesa:** `App\Enums\SessionStatus` (`active`/`closing`/`at_cashier`/`closed`).
+- **Sessões de mesa:** `App\Enums\SessionStatus` (`active`/`closing`/`at_cashier`/`closed`). Abertura/retomada em `App\Services\Session\TableSessionService`.
+- **Conta do cliente (por restaurante):** `users` `role=client` + senha (`registered_at`, `User::hasAccount()`); rotas `/api/client/*`. Fundação da carteira digital — ver [CONTA_CLIENTE.md](CONTA_CLIENTE.md) e [CARTEIRA_DIGITAL.md](CARTEIRA_DIGITAL.md).
+- **Rotas de operação exigem papel** (`role:`), não só o restaurante: o cliente da mesa tem token do mesmo tenant.
 
 ## Camada de plataforma (super admin)
 

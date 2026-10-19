@@ -25,9 +25,11 @@ Enquanto isso, nada de migrations/models de carteira. O documento serve de plano
 ## 1. Conceito
 
 Carteira = **stored-value fechado por restaurante** (estilo gift card / "vale"), ancorado na
-identidade que **já existe**: cada cliente é um `User` (`role: client`) identificado por
-**telefone + `restaurant_id`** (ver `SessionController::store`). O cliente carrega crédito,
-o saldo persiste entre visitas e é consumido como **método de pagamento** dos pedidos.
+**conta do cliente** daquele restaurante: o `User` (`role: client`) com senha — ver
+[CONTA_CLIENTE.md](CONTA_CLIENTE.md) (Etapa 1, implementada em 2026-10-19). Antes disso o
+cliente era só um telefone, sem senha, o que não serve para guardar dinheiro. O saldo exige
+ainda **telefone verificado** (Fase 1.5 de CONTA_CLIENTE.md). O cliente carrega crédito, o
+saldo persiste entre visitas e é consumido como **método de pagamento** dos pedidos.
 
 Três fontes de crédito, um débito:
 
@@ -178,6 +180,7 @@ tabela-filha `wallet_bonus_tiers` se a UI de admin pedir — decidir na Fase B.)
 ## 11. Questões em aberto
 - Recarga: PIX **e** cartão, ou só PIX no MVP (menos risco de chargeback)?
 - Bônus por faixa **percentual** vs **valor fixo** — suportar ambos? (JSON já acomoda.)
-- Identidade hoje é por restaurante; se um dia entrarem **filiais** (evolução prevista em
-  ARQUITETURA.md), decidir se o saldo é por filial ou compartilhado na rede.
+- ~~Saldo por filial ou compartilhado na rede?~~ **Respondida (2026-10-19): por restaurante
+  (tenant), valendo em todas as filiais dele.** Carteira compartilhada entre restaurantes só
+  se um dia houver parceria entre eles.
 - Expiração: job diário (reaproveitar o cron do scheduler que já roda às 03:00).

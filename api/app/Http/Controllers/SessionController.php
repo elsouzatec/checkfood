@@ -3,23 +3,29 @@
 namespace App\Http\Controllers;
 
 use App\Enums\OrderStatus;
-use App\Enums\SessionStatus;
-use App\Enums\TableStatus;
 use App\Models\AppSession;
 use App\Models\Payment;
 use App\Models\Table;
 use App\Models\User;
 use App\Services\Payment\PaymentService;
+use App\Services\Session\TableSessionService;
+use App\Services\Session\TableUnavailableException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class SessionController extends Controller
 {
-    public function __construct(private PaymentService $paymentService) {}
+    public function __construct(
+        private PaymentService $paymentService,
+        private TableSessionService $tableSessions
+    ) {}
 
     /**
      * POST /api/sessions
+     *
+     * Entrada anônima pelo QR: o cliente se identifica só pelo telefone.
+     * Telefone que já tem conta exige login (409 requires_login) — senão
+     * qualquer um entraria como o dono da conta digitando o número.
      */
     public function store(Request $request): JsonResponse
     {
@@ -35,101 +41,48 @@ class SessionController extends Controller
             return response()->json(['message' => 'Mesa não encontrada.'], 404);
         }
 
-        $restaurantId = $table->restaurant_id;
-        $phoneDigits  = preg_replace('/[^0-9]/', '', $request->phone);
-
-        $activeSession = AppSession::where('table_id', $table->id)
-            ->whereIn('status', [SessionStatus::ACTIVE->value, SessionStatus::CLOSING->value])
-            ->first();
-
-        if ($activeSession) {
-            // Sessão guest (aberta pelo garçom) — user_id é null.
-            // Cliente não pode entrar; garçom gerencia pelo próprio app.
-            if ($activeSession->user_id === null) {
-                return response()->json(['message' => 'Mesa ocupada. Solicite assistência ao garçom.'], 409);
-            }
-
-            $sessionUser  = User::find($activeSession->user_id);
-            $sessionPhone = preg_replace('/[^0-9]/', '', $sessionUser->phone ?? '');
-
-            // Só cliente retoma pelo telefone — nunca emitir token de funcionário aqui.
-            if ($sessionUser->isClient() && $sessionPhone === $phoneDigits) {
-                $token   = $sessionUser->createToken('client')->plainTextToken;
-                $payment = $activeSession->isClosing()
-                    ? Payment::where('session_id', $activeSession->id)->latest()->first()
-                    : null;
-
-                $restaurant = $table->restaurant;
-
-                return response()->json([
-                    'message' => 'Sessão retomada.',
-                    'session' => $activeSession,
-                    'token'   => $token,
-                    'table'   => $table,
-                    'user'    => $sessionUser,
-                    'restaurant' => [
-                        'id'       => $restaurant->id,
-                        'slug'     => $restaurant->slug,
-                        'name'     => $restaurant->name,
-                        'logo_url' => $restaurant->logo_url,
-                    ],
-                    'payment' => $payment ? ['id' => $payment->id, 'amount' => $payment->amount] : null,
-                ]);
-            }
-
-            return response()->json(['message' => 'Mesa ocupada por outro cliente.'], 409);
-        }
+        $phoneDigits = preg_replace('/[^0-9]/', '', $request->phone);
 
         // Só clientes: o telefone de um funcionário digitado na mesa não pode
         // render um token com o papel dele (gerente → /api/admin).
-        $user = User::where('restaurant_id', $restaurantId)
+        $user = User::where('restaurant_id', $table->restaurant_id)
             ->where('role', 'client')
             ->where(function ($q) use ($request, $phoneDigits) {
                 $q->where('phone', $request->phone)
                   ->orWhereRaw("REGEXP_REPLACE(phone, '[^0-9]', '') = ?", [$phoneDigits]);
             })->first();
 
-        if (!$user) {
-            $user = User::create([
-                'restaurant_id' => $restaurantId,
-                'name'          => $request->name ?? 'Cliente',
-                'phone'         => $phoneDigits,
-                'email'         => null,
-                'password'      => null,
-                'role'          => 'client',
-            ]);
+        if ($user?->hasAccount()) {
+            return response()->json([
+                'message'        => 'Este telefone tem conta. Entre com sua senha.',
+                'requires_login' => true,
+            ], 409);
         }
 
-        $session = AppSession::create([
-            'restaurant_id' => $restaurantId,
-            'table_id'      => $table->id,
-            'user_id'       => $user->id,
-            'session_token' => Str::uuid()->toString(),
-            'device_id'     => $phoneDigits,
-            'status'        => SessionStatus::ACTIVE,
-        ]);
+        try {
+            if (!$user) {
+                // Mesa ocupada não deve criar cadastro para o telefone digitado.
+                $this->tableSessions->ensureFree($table);
 
-        $table->update(['status' => TableStatus::OCUPADA]);
+                $user = User::create([
+                    'restaurant_id' => $table->restaurant_id,
+                    'name'          => $request->name ?? 'Cliente',
+                    'phone'         => $phoneDigits,
+                    'email'         => null,
+                    'password'      => null,
+                    'role'          => 'client',
+                ]);
+            }
 
-        $user->tokens()->where('name', 'client')->delete();
-        $token = $user->createToken('client')->plainTextToken;
+            $opened = $this->tableSessions->open($table, $user);
+        } catch (TableUnavailableException $e) {
+            return response()->json(['message' => $e->getMessage()], 409);
+        }
 
-        $restaurant = $table->restaurant;
-
-        return response()->json([
-            'message' => 'Sessão criada.',
-            'session' => $session,
-            'token'   => $token,
-            'table'   => $table,
-            'user'    => $user,
-            'restaurant' => [
-                'id'       => $restaurant->id,
-                'slug'     => $restaurant->slug,
-                'name'     => $restaurant->name,
-                'logo_url' => $restaurant->logo_url,
-            ],
-            'payment' => null,
-        ], 201);
+        return response()->json(
+            $this->tableSessions->payload($table, $user, $opened),
+            $opened['created'] ? 201 : 200
+        );
     }
 
     /**

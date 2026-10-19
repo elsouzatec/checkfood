@@ -37,6 +37,14 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
 
+        // Cadastro de conta de cliente: público, então limite por IP.
+        RateLimiter::for('client-register', function (Request $request) {
+            return [
+                Limit::perMinute(5)->by($request->ip()),
+                Limit::perHour(30)->by($request->ip()),
+            ];
+        });
+
         // API autenticada: limite generoso por usuário (não por IP — vários
         // dispositivos do mesmo restaurante saem pelo mesmo IP via NAT).
         RateLimiter::for('api', function (Request $request) {

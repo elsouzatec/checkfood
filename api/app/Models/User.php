@@ -16,6 +16,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'restaurant_id', 'name', 'apelido', 'phone', 'email', 'password', 'role', 'is_active',
+        'registered_at', 'terms_accepted_at', 'terms_version', 'history_visible_from',
     ];
 
     protected $hidden = [
@@ -25,10 +26,13 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
-            'role'              => UserRole::class,
-            'is_active'         => 'boolean',
+            'email_verified_at'    => 'datetime',
+            'password'             => 'hashed',
+            'role'                 => UserRole::class,
+            'is_active'            => 'boolean',
+            'registered_at'        => 'datetime',
+            'terms_accepted_at'    => 'datetime',
+            'history_visible_from' => 'datetime',
         ];
     }
 
@@ -53,4 +57,10 @@ class User extends Authenticatable
     public function isClient(): bool     { return $this->role === UserRole::CLIENT; }
     public function isCashier(): bool    { return $this->role === UserRole::CASHIER; }
     public function isSuperAdmin(): bool { return $this->role === UserRole::SUPER_ADMIN; }
+
+    /** Cliente com conta (senha) neste restaurante — não entra mais só pelo telefone. */
+    public function hasAccount(): bool
+    {
+        return $this->isClient() && $this->registered_at !== null;
+    }
 }

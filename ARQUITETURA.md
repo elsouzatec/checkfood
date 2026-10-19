@@ -19,7 +19,7 @@ Plataforma SaaS multi-tenant para restaurantes. Uma única instância (API + ban
 
 | Papel | `restaurant_id` | App | Escopo |
 |---|---|---|---|
-| `client` | sim | cliente | sessão da própria mesa |
+| `client` | sim | cliente | sessão da própria mesa; com senha = **conta** naquele restaurante |
 | `waiter` | sim | garçom | restaurante |
 | `kitchen` | sim | cozinha | restaurante |
 | `cashier` | sim | caixa | restaurante |
@@ -50,6 +50,17 @@ Isolamento por `restaurant_id` em todas as tabelas de domínio. Reforçado pelo 
   - `email` + `password` (global; super admin entra assim, sem restaurante)
 - Unicidade global do telefone entre staff (`waiter`/`kitchen`/`cashier`/`manager`) é validada no cadastro (`AdminUserController`, `PlatformRestaurantController`). Restaurante inativo bloqueia login (exceto super admin).
 - Habilidade especial `print-agent`: token Sanctum dedicado para o agente de impressão (`/api/print-agent/*`).
+
+### Cliente: mesa e conta
+- **Entrada pela mesa** (`POST /sessions`): QR + telefone, sem senha. Só encontra/cria usuários `role=client`
+  — o telefone de um funcionário digitado na mesa vira um cliente separado, nunca o token do funcionário.
+- **Conta do cliente — por restaurante** ([CONTA_CLIENTE.md](CONTA_CLIENTE.md)): o mesmo `users` `role=client`
+  com senha (`registered_at`). Mesmo telefone em restaurantes diferentes = contas independentes. Base da
+  futura carteira digital. Telefone com conta não entra mais na mesa só pelo número (`requires_login`).
+- **Dois tokens no app cliente:** `pf_account_token` (conta, `client-account`, 90 dias) e `pf_token`
+  (sessão da mesa, `client`, renovado a cada visita). `POST /client/tables/link` troca o primeiro pelo segundo.
+- `App\Services\Session\TableSessionService` concentra a regra de ocupação da mesa para as duas entradas.
+- Rotas de operação (garçom/cozinha) exigem papel além do restaurante — ver API.md.
 
 ## Máquina de estados
 
