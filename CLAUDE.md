@@ -2,6 +2,8 @@
 
 Plataforma SaaS **multi-tenant** para restaurantes: cardápio digital por QR code, pedidos, cozinha, caixa, garçom e administração. Uma instância serve vários restaurantes, isolados por `restaurant_id`. "PagFood" é o nome da plataforma; cada restaurante tem nome/logo próprios.
 
+> **Idioma: responda SEMPRE em português do Brasil (pt-BR)** — mensagens ao usuário, resumos de deploy, documentação e mensagens de commit. Só nomes de código, comandos e termos técnicos sem tradução usual ficam em inglês.
+
 ## Estrutura do monorepo
 
 ```
