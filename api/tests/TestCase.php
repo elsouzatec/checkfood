@@ -28,4 +28,17 @@ abstract class TestCase extends BaseTestCase
 
         return $app;
     }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // O MariaDB de produção tem REGEXP_REPLACE (busca por telefone só com
+        // dígitos em login/sessão/cadastro); o SQLite dos testes não.
+        $this->app['db']->connection()->getPdo()->sqliteCreateFunction(
+            'REGEXP_REPLACE',
+            fn ($subject, $pattern, $replacement) => preg_replace('#'.$pattern.'#u', $replacement, (string) $subject),
+            3
+        );
+    }
 }

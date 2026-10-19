@@ -70,41 +70,51 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::post('/payments/{payment}/deep-link',   [PaymentController::class, 'deepLink']);
     Route::post('/payments/{payment}/confirm-pos', [PaymentController::class, 'confirmPos']);
 
+    // Rotas de operação exigem papel: os controllers só conferem o restaurante,
+    // e o cliente da mesa também tem token deste restaurante. Sem o papel, ele
+    // listaria pedidos de outras mesas e validaria/cancelaria pedidos.
+    // garcom app: waiter|manager · cozinha app: kitchen|manager
+    $salao   = 'role:waiter,manager';
+    $cozinha = 'role:kitchen,manager';
+    $staff   = 'role:waiter,kitchen,cashier,manager';
+
     // Waiter Calls — NOMES FIXOS PRIMEIRO
     Route::get('/waiter-calls/status',                     [WaiterCallController::class, 'status']);
-    Route::get('/waiter-calls/pending',                    [WaiterCallController::class, 'pending']);
+    Route::get('/waiter-calls/pending',                    [WaiterCallController::class, 'pending'])->middleware($salao);
     Route::post('/waiter-calls',                           [WaiterCallController::class, 'store']);
-    Route::patch('/waiter-calls/{waiterCall}/dismiss',     [WaiterCallController::class, 'dismiss']);
+    Route::patch('/waiter-calls/{waiterCall}/dismiss',     [WaiterCallController::class, 'dismiss'])->middleware($salao);
 
     // Orders — NOMES FIXOS PRIMEIRO
     Route::get('/orders/my-session',                       [OrderController::class, 'mySession']);
-    Route::get('/orders/pending',                          [OrderController::class, 'pending']);
-    Route::get('/orders/kitchen',                          [OrderController::class, 'kitchen']);
-    Route::get('/orders/ready',                            [OrderController::class, 'ready']);
+    Route::get('/orders/pending',                          [OrderController::class, 'pending'])->middleware($salao);
+    Route::get('/orders/kitchen',                          [OrderController::class, 'kitchen'])->middleware($cozinha);
+    Route::get('/orders/ready',                            [OrderController::class, 'ready'])->middleware('role:waiter,kitchen,manager');
     // Orders — WILDCARD POR ÚLTIMO
-    Route::get('/orders/{order}',                          [OrderController::class, 'show']);
+    Route::get('/orders/{order}',                          [OrderController::class, 'show'])->middleware($staff);
     Route::post('/orders',                                 [OrderController::class, 'store']);
-    Route::patch('/orders/{order}/validate',               [OrderController::class, 'validateOrder']);
-    Route::patch('/orders/{order}/quick-deliver',          [OrderController::class, 'quickDeliver']);
-    Route::patch('/orders/{order}/start',                  [OrderController::class, 'start']);
-    Route::patch('/orders/{order}/ready',                  [OrderController::class, 'markReady']);
-    Route::patch('/orders/{order}/deliver',                [OrderController::class, 'deliver']);
-    Route::patch('/orders/{order}/pick-and-deliver',       [OrderController::class, 'pickAndDeliver']);
-    Route::patch('/orders/{order}/cancel',                 [OrderController::class, 'cancel']);
-    Route::delete('/orders/{order}/items/{orderItem}',     [OrderController::class, 'removeItem']);
+    Route::patch('/orders/{order}/validate',               [OrderController::class, 'validateOrder'])->middleware($salao);
+    Route::patch('/orders/{order}/quick-deliver',          [OrderController::class, 'quickDeliver'])->middleware($salao);
+    Route::patch('/orders/{order}/start',                  [OrderController::class, 'start'])->middleware($cozinha);
+    Route::patch('/orders/{order}/ready',                  [OrderController::class, 'markReady'])->middleware($cozinha);
+    Route::patch('/orders/{order}/deliver',                [OrderController::class, 'deliver'])->middleware($salao);
+    Route::patch('/orders/{order}/pick-and-deliver',       [OrderController::class, 'pickAndDeliver'])->middleware($salao);
+    Route::patch('/orders/{order}/cancel',                 [OrderController::class, 'cancel'])->middleware($salao);
+    Route::delete('/orders/{order}/items/{orderItem}',     [OrderController::class, 'removeItem'])->middleware($salao);
 
     // Waiter — sessões de guest e pedidos pelo garçom
-    Route::post('/waiter/sessions',                          [WaiterSessionController::class, 'store']);
-    Route::post('/waiter/sessions/{session}/orders',         [WaiterSessionController::class, 'storeOrder']);
-    Route::post('/waiter/sessions/{session}/forward-cashier', [WaiterSessionController::class, 'forwardToCashier']);
-    Route::get('/waiter/menu',                               [WaiterSessionController::class, 'menu']);
+    Route::middleware($salao)->group(function () {
+        Route::post('/waiter/sessions',                          [WaiterSessionController::class, 'store']);
+        Route::post('/waiter/sessions/{session}/orders',         [WaiterSessionController::class, 'storeOrder']);
+        Route::post('/waiter/sessions/{session}/forward-cashier', [WaiterSessionController::class, 'forwardToCashier']);
+        Route::get('/waiter/menu',                               [WaiterSessionController::class, 'menu']);
+    });
 
     // Tables (garçom/cozinha)
-    Route::get('/tables',                  [TableController::class, 'index']);
-    Route::get('/tables/{table}/orders',   [TableController::class, 'orders']);
+    Route::get('/tables',                  [TableController::class, 'index'])->middleware($staff);
+    Route::get('/tables/{table}/orders',   [TableController::class, 'orders'])->middleware($staff);
 
     // Configurações do restaurante (staff — garçom, cozinha, gerente, caixa)
-    Route::get('/restaurant/settings', [RestaurantSettingsController::class, 'staff']);
+    Route::get('/restaurant/settings', [RestaurantSettingsController::class, 'staff'])->middleware($staff);
 
     // Feedbacks (cliente)
     Route::get('/feedbacks/check/{sessionId}', [FeedbackController::class, 'check']);
