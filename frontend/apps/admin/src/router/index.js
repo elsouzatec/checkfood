@@ -7,6 +7,7 @@ import IngredientsView from '../views/IngredientsView.vue'
 import TablesView from '../views/TablesView.vue'
 import TablesConfigView from '../views/TablesConfigView.vue'
 import StaffView from '../views/StaffView.vue'
+import ClientsView from '../views/ClientsView.vue'
 import SettingsView from '../views/SettingsView.vue'
 import PrintingView from '../views/PrintingView.vue'
 import PerformanceView from '../views/PerformanceView.vue'
@@ -22,6 +23,7 @@ const routes = [
   { path: '/mesas',             name: 'tables',       component: TablesView,       meta: { requiresAuth: true } },
   { path: '/mesas/configurar',  name: 'tables-config',component: TablesConfigView, meta: { requiresAuth: true } },
   { path: '/equipe',            name: 'staff',        component: StaffView,        meta: { requiresAuth: true } },
+  { path: '/clientes',          name: 'clients',      component: ClientsView,      meta: { requiresAuth: true } },
   { path: '/desempenho',        name: 'performance',  component: PerformanceView,  meta: { requiresAuth: true } },
   { path: '/desempenho-equipe', name: 'team-performance', component: TeamPerformanceView, meta: { requiresAuth: true } },
   { path: '/feedbacks',         name: 'feedbacks',    component: FeedbacksView,    meta: { requiresAuth: true } },

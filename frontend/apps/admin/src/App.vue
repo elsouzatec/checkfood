@@ -21,6 +21,7 @@ const navItems = [
   { name: 'ingredients',label: 'Estoque',       icon: '📦' },
   { name: 'tables',     label: 'Mesas',         icon: '🪑' },
   { name: 'staff',      label: 'Equipe',        icon: '👥' },
+  { name: 'clients',    label: 'Clientes',      icon: '👤' },
   { name: 'performance',label: 'Desempenho',    icon: '📈' },
   { name: 'team-performance', label: 'Equipe (KPIs)', icon: '🏃' },
   { name: 'feedbacks',  label: 'Feedbacks',     icon: '⭐' },
