@@ -69,6 +69,11 @@ Isolamento por `restaurant_id` em todas as tabelas de domínio. Reforçado pelo 
 - Fluxo da mesa usa `AppSession::atTable()` — uma entrega em andamento nunca é tratada como a mesa do cliente.
 - Ciclo em `App\Services\Delivery\DeliveryService` (pedido, aceitar, saiu, entregue, cancelar). A aprovação
   é a mesma do garçom: `App\Services\Order\OrderApprovalService`.
+- **Zonas por distância** (`App\Services\Delivery\DeliveryZones`, porte do CheckAutomate): loja com
+  `latitude/longitude` + `delivery_free_km/max_km`; haversine até o ponto do cliente → grátis / taxa / não entrega.
+  Mapas com Leaflet + OpenStreetMap (sem chave) no admin e no app cliente.
+- **PIX pelo app na entrega:** cobrança criada no pedido; `PaymentService::confirmFromGateway` só fecha a sessão
+  quando é mesa — na entrega registra o pagamento e o pedido segue (aceite liberado; entregue + pago encerra).
 - Rotas de operação (garçom/cozinha) exigem papel além do restaurante — ver API.md.
 
 ## Máquina de estados

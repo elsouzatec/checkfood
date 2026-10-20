@@ -45,7 +45,7 @@ Com conta e senha o token do cliente passa a durar semanas — por isso as duas 
   Se o telefone já passou pela mesa sem conta, o mesmo registro vira conta.
 - **Login** (`POST /client/login`): telefone + senha. Sem restaurante informado, procura em todos; senha
   confere em mais de um → 409 `requires_restaurant` com a lista para escolher.
-- **Vincular a uma mesa** (`POST /client/tables/link`): logado, escaneia o QR e entra com um toque. Resposta
+- **Escanear QR Code** (vínculo com a mesa, `POST /client/tables/link`): logado, escaneia o QR e entra com um toque. Resposta
   idêntica à de `POST /sessions` (token da sessão da mesa) — o resto do fluxo da mesa não muda.
   Mesa de outro restaurante → 409 `other_restaurant` (o app oferece entrar pelo telefone).
 - **Telefone com conta não entra só pelo número**: `POST /sessions` → 409 `requires_login`.
@@ -83,7 +83,7 @@ Leitor de QR com fallback `jsQR` (iPhone não tem `BarcodeDetector`).
 - [ ] `payments` desacoplado da sessão de mesa (recarga feita pela conta, fora da mesa) — **mesmo
       pré-requisito da entrega**; fazer uma vez só.
 
-### Fase 3 — Entrega — **básico implementado (branch `feat/entrega`, 2026-10-20)**
+### Fase 3 — Entrega — **implementada (2026-10-20)**: `feat/entrega` (no ar) + `feat/entrega-zonas-pix`
 
 Como funciona:
 - **Liga/desliga por restaurante** em Admin → Configurações → Entrega: taxa fixa, pedido mínimo,
@@ -99,20 +99,39 @@ Como funciona:
 - **Restaurante (app Caixa → aba Entregas):** novas (aceitar/recusar) → em preparo (cozinha vê
   "🛵 Entrega" no KDS) → saiu para entrega → entregue → acerto na tela de sessão de sempre.
   O garçom não vê entregas.
-- **Cliente acompanha** em Meus pedidos: aguardando → em preparo → saiu para entrega → entregue.
+- **Cliente acompanha** em Meus pedidos: (aguardando pagamento PIX →) aguardando → em preparo → saiu para entrega → entregue.
+
+**Zonas por distância** (metodologia do CheckAutomate — `DeliveryFeeService` de lá, `DeliveryZones` aqui):
+- Admin marca a loja num mapa (Leaflet + OpenStreetMap, sem chave; "Usar minha localização" ou arrastar)
+  e define **grátis até X km** e **entrega até Y km**; entre os dois cobra `delivery_fee`; além de Y não entrega.
+  Distância em linha reta (haversine). Sem localização da loja ou raio máximo, vale a taxa fixa.
+- Cliente marca no mapa onde entregar (GPS do celular ou tocar/arrastar o pino) e vê na hora:
+  "Entrega grátis", "Taxa R$ X" ou "Fora da área" (não deixa revisar). A taxa é recalculada no servidor
+  pelo ponto — o app nunca manda taxa. Pedido sem ponto, com zonas ligadas → 422 `location_required`.
+- Entregador: painel do caixa mostra a distância e "Rota no mapa" (Google Maps até o ponto).
+- Diferença para o CheckAutomate: lá o cliente digita o endereço no WhatsApp e o sistema geocodifica
+  (Nominatim/HERE); aqui o próprio cliente marca o ponto no mapa, então não há geocodificação.
+
+**PIX pelo app na entrega** (independe de `allow_client_payment` e do garçom; só exige o Mercado Pago configurado):
+- Cobrança criada junto com o pedido (itens + taxa), tela de PIX com QR/copia e cola e confirmação automática (webhook).
+- O restaurante **só aceita depois do PIX confirmado**; a confirmação não fecha a sessão (a entrega segue).
+- Entregue + pago → encerra direto, sem acerto no caixa. Cancelar entrega paga: o painel avisa para estornar no Mercado Pago.
+- PIX vencido (30 min) não é regerado (a chave de idempotência do MP devolveria a mesma cobrança): o cliente refaz o pedido.
 
 Ainda não:
 - [ ] Filiais (`branches`) — a conta e a entrega já valem no restaurante inteiro; listar unidades virá com elas.
-- [ ] Pagamento online antecipado (PIX pelo app) — hoje é só na entrega.
-- [ ] Taxa por bairro/distância, horário de funcionamento automático e retirada no balcão.
+- [ ] Taxa por bairro, horário de funcionamento automático e retirada no balcão.
+- [ ] Cancelamento automático de entrega com PIX vencido sem pagamento (hoje o restaurante recusa no painel).
 - [ ] Faturamento de entregas nos relatórios do admin: os itens já contam; a taxa de entrega aparece no caixa, mas não nos relatórios de produtos.
+- [ ] Tiles do OpenStreetMap: ok para o volume atual; com muitos acessos, usar um provedor de tiles próprio.
 
 ## 8. Deploy
 
-Conta do cliente — **no ar desde 2026-10-19** (`fix/rotas-staff-exigem-papel` + `feat/conta-cliente`).
+Conta do cliente — **no ar desde 2026-10-19**. Entrega básica (`feat/entrega`) — **no ar desde 2026-10-20**.
 
-Entrega (`feat/entrega`), quando aprovado:
-1. Merge de `feat/entrega` na `main`.
-2. `php artisan migrate --force` (1 migration: colunas de entrega + `orders.table_id` aceita null) e
+Zonas + PIX (`feat/entrega-zonas-pix`), quando aprovado:
+1. Merge na `main`.
+2. `php artisan migrate --force` (1 migration: localização/raios no restaurante e ponto da entrega na sessão) e
    `php artisan config:cache && php artisan route:cache`.
-3. `npm run build` em `frontend/apps/cliente`, `caixa`, `cozinha` e `admin` — o build JÁ publica.
+3. `npm install` em `frontend/apps/cliente` e `frontend/apps/admin` (dependência nova: `leaflet`).
+4. `npm run build` em `cliente`, `caixa` e `admin` — o build JÁ publica.
