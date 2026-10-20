@@ -36,7 +36,7 @@ class MercadoPagoGateway implements PaymentGatewayInterface
             ])
             ->post("{$this->baseUrl}/v1/payments", [
                 'transaction_amount' => round((float) $payment->amount, 2),
-                'description'        => "Mesa {$context['table_number']} — {$context['restaurant_name']}",
+                'description'        => ($context['label'] ?? "Mesa {$context['table_number']}") . " — {$context['restaurant_name']}",
                 'payment_method_id'  => 'pix',
                 'payer'              => [
                     'email'      => 'pagamento@pagfood.online',

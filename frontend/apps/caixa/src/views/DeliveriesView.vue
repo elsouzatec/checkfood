@@ -13,7 +13,7 @@ const busyId     = ref(null)
 const error      = ref('')
 let pollTimer    = null
 
-const methodLabels = { dinheiro: 'Dinheiro', cartao: 'Cartão', pix: 'PIX' }
+const methodLabels = { dinheiro: 'Dinheiro', cartao: 'Cartão', pix: 'PIX (app)' }
 
 const columns = [
   { key: 'novas',    title: 'Novas',            empty: 'Nenhum pedido novo.' },
@@ -25,7 +25,7 @@ const columns = [
 function columnOf(d) {
   if (d.status === 'at_cashier') return 'acerto'
   if (d.status === 'closed') return 'encerradas'
-  return { aguardando: 'novas', em_preparo: 'preparo', a_caminho: 'caminho' }[d.stage] || 'novas'
+  return { aguardando_pagamento: 'novas', aguardando: 'novas', em_preparo: 'preparo', a_caminho: 'caminho' }[d.stage] || 'novas'
 }
 
 const byColumn = computed(() => {
@@ -69,12 +69,14 @@ function dispatchOut(d) {
   act(d, 'dispatch')
 }
 
+// Já pago pelo app → a entrega encerra aqui; senão abre o acerto no caixa.
 async function delivered(d) {
   const updated = await act(d, 'delivered')
-  if (updated) router.push(`/sessao/${d.id}`)
+  if (updated && updated.status !== 'closed') router.push(`/sessao/${d.id}`)
 }
 
 function cancel(d) {
+  if (d.paid && !confirm('Este pedido já foi pago por PIX pelo app. Ao cancelar, faça o estorno no Mercado Pago. Continuar?')) return
   const reason = prompt('Motivo do cancelamento (o cliente verá o pedido como cancelado):')
   if (!reason) return
   act(d, 'cancel', { reason })
@@ -140,6 +142,10 @@ onUnmounted(() => clearInterval(pollTimer))
           <div class="cx-dcard__addr">
             📍 {{ d.address_line }}
             <span v-if="d.address?.reference" class="cx-dcard__ref">Ref.: {{ d.address.reference }}</span>
+            <span v-if="d.distance_km != null || d.maps_url" class="cx-dcard__route">
+              <template v-if="d.distance_km != null">{{ Number(d.distance_km).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) }} km da loja</template>
+              <a v-if="d.maps_url" :href="d.maps_url" target="_blank" rel="noopener">🗺️ Rota no mapa</a>
+            </span>
           </div>
           <div v-if="d.notes" class="cx-dcard__notes">“{{ d.notes }}”</div>
 
@@ -154,6 +160,8 @@ onUnmounted(() => clearInterval(pollTimer))
 
           <div class="cx-dcard__pay">
             <span class="cx-method-pill" :class="`cx-method-pill--${d.payment_method}`">{{ methodLabels[d.payment_method] || d.payment_method }}</span>
+            <span v-if="d.paid" class="cx-dcard__paid">✓ pago</span>
+            <span v-else-if="d.stage === 'aguardando_pagamento'" class="cx-dcard__change">⏳ aguardando PIX</span>
             <span v-if="d.change_for" class="cx-dcard__change">troco p/ {{ formatPrice(d.change_for) }}</span>
             <span class="cx-dcard__total">{{ formatPrice(d.total) }}</span>
           </div>
@@ -165,7 +173,12 @@ onUnmounted(() => clearInterval(pollTimer))
 
           <div class="cx-dcard__actions">
             <template v-if="col.key === 'novas'">
-              <button class="cx-btn cx-btn--primary" :disabled="busyId === d.id" @click="accept(d)">Aceitar</button>
+              <button
+                class="cx-btn cx-btn--primary"
+                :disabled="busyId === d.id || d.stage === 'aguardando_pagamento'"
+                :title="d.stage === 'aguardando_pagamento' ? 'Libera quando o PIX for confirmado' : ''"
+                @click="accept(d)"
+              >{{ d.stage === 'aguardando_pagamento' ? 'Aguardando PIX' : 'Aceitar' }}</button>
               <button class="cx-btn cx-btn--secondary" :disabled="busyId === d.id" @click="cancel(d)">Recusar</button>
             </template>
             <template v-else-if="col.key === 'preparo'">
@@ -173,7 +186,9 @@ onUnmounted(() => clearInterval(pollTimer))
               <button class="cx-btn cx-btn--secondary" :disabled="busyId === d.id" @click="cancel(d)">Cancelar</button>
             </template>
             <template v-else-if="col.key === 'caminho'">
-              <button class="cx-btn cx-btn--primary" :disabled="busyId === d.id" @click="delivered(d)">Entregue — receber pagamento</button>
+              <button class="cx-btn cx-btn--primary" :disabled="busyId === d.id" @click="delivered(d)">
+                {{ d.paid ? 'Entregue' : 'Entregue — receber pagamento' }}
+              </button>
             </template>
             <template v-else-if="col.key === 'acerto'">
               <button class="cx-btn cx-btn--primary" @click="router.push(`/sessao/${d.id}`)">Receber pagamento</button>
@@ -258,6 +273,9 @@ onUnmounted(() => clearInterval(pollTimer))
 .cx-dcard__time { font-size: 12px; color: var(--cx-text-muted); text-align: right; white-space: nowrap; }
 .cx-dcard__addr { font-size: 14px; color: var(--cx-text); margin-top: 10px; line-height: 1.4; }
 .cx-dcard__ref { display: block; font-size: 12px; color: var(--cx-text-muted); }
+.cx-dcard__route { display: flex; gap: 10px; align-items: center; font-size: 12px; color: var(--cx-text-muted); margin-top: 4px; }
+.cx-dcard__route a { color: var(--cx-accent); font-weight: 700; text-decoration: none; }
+.cx-dcard__paid { font-size: 12px; color: var(--cx-success); font-weight: 800; }
 .cx-dcard__notes { font-size: 13px; color: var(--cx-text-soft); font-style: italic; margin-top: 6px; }
 .cx-dcard__items {
   list-style: none;

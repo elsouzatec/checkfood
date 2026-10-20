@@ -22,6 +22,7 @@ class AppSession extends Model
         'payment_method_chosen', 'closed_at', 'at_cashier_at',
         'delivery_address', 'delivery_fee', 'delivery_notes', 'change_for',
         'accepted_at', 'dispatched_at', 'delivered_at',
+        'delivery_lat', 'delivery_lng', 'delivery_distance_km',
     ];
 
     protected $attributes = [
@@ -31,16 +32,19 @@ class AppSession extends Model
     protected function casts(): array
     {
         return [
-            'status'           => SessionStatus::class,
-            'type'             => SessionType::class,
-            'closed_at'        => 'datetime',
-            'at_cashier_at'    => 'datetime',
-            'delivery_address' => 'array',
-            'delivery_fee'     => 'decimal:2',
-            'change_for'       => 'decimal:2',
-            'accepted_at'      => 'datetime',
-            'dispatched_at'    => 'datetime',
-            'delivered_at'     => 'datetime',
+            'status'               => SessionStatus::class,
+            'type'                 => SessionType::class,
+            'closed_at'            => 'datetime',
+            'at_cashier_at'        => 'datetime',
+            'delivery_address'     => 'array',
+            'delivery_fee'         => 'decimal:2',
+            'change_for'           => 'decimal:2',
+            'accepted_at'          => 'datetime',
+            'dispatched_at'        => 'datetime',
+            'delivered_at'         => 'datetime',
+            'delivery_lat'         => 'float',
+            'delivery_lng'         => 'float',
+            'delivery_distance_km' => 'float',
         ];
     }
 
@@ -104,6 +108,16 @@ class AppSession extends Model
         }
 
         return $line;
+    }
+
+    /** Link de rota para o entregador (abre o app de mapas do celular). */
+    public function deliveryMapsUrl(): ?string
+    {
+        if ($this->delivery_lat === null || $this->delivery_lng === null) {
+            return null;
+        }
+
+        return 'https://www.google.com/maps/dir/?api=1&destination=' . $this->delivery_lat . ',' . $this->delivery_lng;
     }
 
     // ─── Estado helpers ─────────────────────────────────────

@@ -143,6 +143,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
         // Entrega (restaurante com delivery_enabled)
         Route::get('/delivery',         [ClientDeliveryController::class, 'show']);
+        Route::post('/delivery/quote',  [ClientDeliveryController::class, 'quote']);
         Route::post('/delivery-orders', [ClientDeliveryController::class, 'store']);
     });
 

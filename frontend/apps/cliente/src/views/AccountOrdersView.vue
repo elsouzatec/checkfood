@@ -29,6 +29,7 @@ var statusLabels = {
 
 // Etapas da entrega (sessão) → rótulo + cor do badge
 var stageLabels = {
+  aguardando_pagamento: 'Aguardando pagamento PIX',
   aguardando: 'Aguardando o restaurante',
   em_preparo: 'Em preparo',
   a_caminho: 'Saiu para entrega 🛵',
@@ -36,14 +37,15 @@ var stageLabels = {
   cancelado: 'Cancelado',
 }
 var stageBadge = {
+  aguardando_pagamento: 'pendente_validacao',
   aguardando: 'pendente_validacao',
   em_preparo: 'preparando',
   a_caminho: 'pronto',
   entregue: 'entregue',
   cancelado: 'cancelado',
 }
-var paymentLabels = { dinheiro: 'Dinheiro', cartao: 'Cartão', pix: 'PIX' }
-var ACTIVE_STAGES = ['aguardando', 'em_preparo', 'a_caminho']
+var paymentLabels = { dinheiro: 'Dinheiro na entrega', cartao: 'Cartão na entrega', pix: 'PIX pelo app' }
+var ACTIVE_STAGES = ['aguardando_pagamento', 'aguardando', 'em_preparo', 'a_caminho']
 
 // Uma entrega pode ter virado vários pedidos (um por setor): vira um cartão só.
 var cards = computed(function() {
@@ -176,9 +178,16 @@ onUnmounted(function() {
             </li>
           </ul>
           <div class="order-row-total" :class="{ 'is-cancelled': card.delivery.stage === 'cancelado' }">
-            <span>{{ paymentLabels[card.delivery.payment_method] || '' }} na entrega</span>
+            <span>{{ paymentLabels[card.delivery.payment_method] || '' }}<template v-if="card.delivery.paid"> · pago ✓</template></span>
             <strong>{{ formatMoney(card.itemsTotal + (card.itemsTotal > 0 ? (card.delivery.fee || 0) : 0)) }}</strong>
           </div>
+          <button
+            v-if="card.delivery.stage === 'aguardando_pagamento' && card.delivery.payment_id"
+            class="btn btn-primary order-row-pay"
+            @click="router.push({ path: '/entrega/pix/' + card.delivery.payment_id, query: { entrega: card.sessionId } })"
+          >
+            Pagar PIX
+          </button>
         </article>
 
         <!-- Mesa -->
@@ -272,4 +281,5 @@ onUnmounted(function() {
 }
 .order-row-total strong { color: var(--text-primary); font-size: var(--fs-md); }
 .order-row-total.is-cancelled strong { text-decoration: line-through; color: var(--text-muted); }
+.order-row-pay { width: 100%; margin-top: 10px; }
 </style>

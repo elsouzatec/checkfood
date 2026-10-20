@@ -159,6 +159,9 @@ class ClientAccountController extends Controller
                 'fee'            => (float) $s->delivery_fee,
                 'payment_method' => $s->payment_method_chosen,
                 'change_for'     => $s->change_for !== null ? (float) $s->change_for : null,
+                'paid'           => $this->deliveries->isPaid($s),
+                // PIX pelo app ainda não pago: o app reabre a tela de pagamento.
+                'payment_id'     => $s->isActive() ? $this->deliveries->pendingPixPayment($s)?->id : null,
             ]]);
 
         $page->getCollection()->transform(fn (Order $order) => [
