@@ -1,8 +1,9 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import accountApi from '../accountApi'
 import { useDeliveryCartStore } from '../stores/deliveryCart'
+import DeliveryMap from '../components/DeliveryMap.vue'
 
 // Finalização da ENTREGA. O pedido só sai depois de o cliente confirmar o
 // endereço numa segunda etapa — ninguém pede entrega achando que é a mesa.
@@ -23,15 +24,43 @@ var sending = ref(false)
 var error = ref('')
 
 var paymentLabels = {
-  dinheiro: 'Dinheiro',
-  cartao: 'Cartão (maquininha)',
-  pix: 'PIX',
+  pix: 'PIX pelo app (pague agora)',
+  dinheiro: 'Dinheiro na entrega',
+  cartao: 'Cartão na entrega (maquininha)',
 }
 
-var fee = computed(() => info.value?.delivery?.fee || 0)
+// Entrega por distância: ponto no mapa → cotação no servidor
+var location = ref(null)
+var quote = ref(null)
+var quoting = ref(false)
+
+var zones = computed(() => info.value?.delivery?.zones || null)
+var store = computed(() => zones.value ? { lat: zones.value.lat, lng: zones.value.lng } : null)
+var outOfRange = computed(() => quote.value?.status === 'out_of_range')
+var fee = computed(() => {
+  if (!zones.value) return info.value?.delivery?.fee || 0
+  return quote.value && quote.value.status !== 'out_of_range' ? quote.value.fee : 0
+})
 var minOrder = computed(() => info.value?.delivery?.min_order || 0)
 var total = computed(() => cart.total + fee.value)
 var belowMin = computed(() => cart.total < minOrder.value)
+
+watch(location, async function(p) {
+  if (!p || !zones.value) return
+  quoting.value = true
+  try {
+    var res = await accountApi.post('/client/delivery/quote', p)
+    quote.value = res.data.quote
+  } catch (e) {
+    quote.value = null
+  } finally {
+    quoting.value = false
+  }
+})
+
+function formatKm(km) {
+  return Number(km).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' km'
+}
 
 var addressLine = computed(() => {
   var a = address.value
@@ -49,7 +78,12 @@ onMounted(async function() {
     if (res.data.active_table) block.value = 'at_table'
     else if (!res.data.delivery.enabled) block.value = 'disabled'
     if (res.data.last_address) {
-      address.value = Object.assign({ street: '', number: '', complement: '', district: '', reference: '' }, res.data.last_address)
+      var last = res.data.last_address
+      address.value = {
+        street: last.street || '', number: last.number || '', complement: last.complement || '',
+        district: last.district || '', reference: last.reference || '',
+      }
+      if (last.lat != null && last.lng != null) location.value = { lat: last.lat, lng: last.lng }
     }
   } catch (e) {
     block.value = 'disabled'
@@ -65,6 +99,14 @@ function formatMoney(val) {
 // 1ª etapa: valida e abre a confirmação do endereço.
 function review() {
   error.value = ''
+  if (zones.value && !location.value) {
+    error.value = 'Marque no mapa onde entregar (ou use sua localização).'
+    return
+  }
+  if (outOfRange.value) {
+    error.value = 'Esse ponto está fora da área de entrega.'
+    return
+  }
   var a = address.value
   if (!a.street.trim() || !a.number.trim() || !a.district.trim()) {
     error.value = 'Preencha rua, número e bairro.'
@@ -92,11 +134,17 @@ async function send() {
   try {
     var data = await cart.place({
       address: address.value,
+      location: location.value || undefined,
       payment_method: paymentMethod.value,
       change_for: paymentMethod.value === 'dinheiro' && changeFor.value ? Number(changeFor.value) : undefined,
       notes: notes.value || undefined,
     })
-    router.replace({ path: '/minha-conta/pedidos', query: { entrega: data.delivery.id } })
+    // PIX pelo app: vai direto para a tela de pagamento.
+    if (data.payment) {
+      router.replace({ path: '/entrega/pix/' + data.payment.id, query: { entrega: data.delivery.id } })
+    } else {
+      router.replace({ path: '/minha-conta/pedidos', query: { entrega: data.delivery.id } })
+    }
   } catch (err) {
     confirming.value = false
     var d = err.response?.data
@@ -160,8 +208,21 @@ async function send() {
 
         <!-- Endereço -->
         <section class="card co-card">
-          <h2 class="co-title">Endereço de entrega</h2>
+          <h2 class="co-title">Onde entregar</h2>
           <p v-if="info.delivery.area_note" class="co-hint">Entregamos em: {{ info.delivery.area_note }}</p>
+
+          <template v-if="store">
+            <DeliveryMap v-model="location" :store="store" :zones="zones" />
+            <div v-if="quoting" class="co-quote">Calculando a taxa...</div>
+            <div v-else-if="quote" class="co-quote" :class="'co-quote--' + quote.status">
+              <template v-if="quote.status === 'free'">✓ Entrega grátis · {{ formatKm(quote.distance_km) }}</template>
+              <template v-else-if="quote.status === 'paid'">Taxa de entrega {{ formatMoney(quote.fee) }} · {{ formatKm(quote.distance_km) }}</template>
+              <template v-else-if="quote.status === 'out_of_range'">✕ Fora da área de entrega ({{ formatKm(quote.distance_km) }})</template>
+            </div>
+            <div v-else class="co-quote">Marque o local de entrega para ver a taxa.</div>
+          </template>
+
+          <h3 class="co-subtitle">Endereço para o entregador</h3>
           <div class="co-row">
             <div class="form-group co-grow">
               <label>Rua</label>
@@ -188,7 +249,7 @@ async function send() {
 
         <!-- Pagamento -->
         <section class="card co-card">
-          <h2 class="co-title">Pagamento na entrega</h2>
+          <h2 class="co-title">Pagamento</h2>
           <div class="co-pay">
             <label v-for="m in info.payment_methods" :key="m" class="co-pay-option" :class="{ active: paymentMethod === m }">
               <input v-model="paymentMethod" type="radio" :value="m" />
@@ -208,7 +269,11 @@ async function send() {
         <!-- Totais -->
         <section class="card co-card">
           <div class="co-sum"><span>Itens</span><span>{{ formatMoney(cart.total) }}</span></div>
-          <div class="co-sum"><span>Taxa de entrega</span><span>{{ fee > 0 ? formatMoney(fee) : 'Grátis' }}</span></div>
+          <div class="co-sum">
+            <span>Taxa de entrega</span>
+            <span v-if="zones && !quote">—</span>
+            <span v-else>{{ fee > 0 ? formatMoney(fee) : 'Grátis' }}</span>
+          </div>
           <div class="co-sum co-sum--total"><span>Total</span><span>{{ formatMoney(total) }}</span></div>
           <p v-if="belowMin" class="co-warn">Pedido mínimo para entrega: {{ formatMoney(minOrder) }}.</p>
           <p v-if="info.delivery.eta_minutes" class="co-hint">Tempo estimado: ~{{ info.delivery.eta_minutes }} min após o restaurante aceitar.</p>
@@ -216,7 +281,7 @@ async function send() {
 
         <div v-if="error" class="msg msg-error">{{ error }}</div>
 
-        <button class="btn btn-primary btn-lg co-submit" :disabled="belowMin" @click="review">
+        <button class="btn btn-primary btn-lg co-submit" :disabled="belowMin || outOfRange || quoting" @click="review">
           Revisar pedido para entrega
         </button>
       </template>
@@ -230,10 +295,14 @@ async function send() {
         <p class="co-modal-text">Vamos levar até:</p>
         <p class="co-modal-address">{{ addressLine }}</p>
         <p v-if="address.reference" class="co-modal-text">Referência: {{ address.reference }}</p>
+        <p v-if="quote && quote.distance_km != null" class="co-modal-text">
+          {{ formatKm(quote.distance_km) }} da loja · {{ fee > 0 ? 'taxa ' + formatMoney(fee) : 'entrega grátis' }}
+        </p>
         <p class="co-modal-total">
-          {{ formatMoney(total) }} · {{ paymentLabels[paymentMethod] }} na entrega
+          {{ formatMoney(total) }} · {{ paymentLabels[paymentMethod] }}
           <template v-if="paymentMethod === 'dinheiro' && changeFor"> · troco para {{ formatMoney(changeFor) }}</template>
         </p>
+        <p v-if="paymentMethod === 'pix'" class="co-modal-text">Na próxima tela você paga o PIX. O restaurante começa a preparar quando o pagamento for confirmado.</p>
         <p class="co-modal-warn">Não é um pedido para mesa. Se você está no restaurante, cancele e peça pelo QR Code da mesa.</p>
         <button class="btn btn-primary btn-lg" :disabled="sending" @click="send">
           {{ sending ? 'Enviando...' : 'Sim, entregar neste endereço' }}
@@ -269,6 +338,24 @@ async function send() {
   margin-bottom: 12px;
 }
 .co-hint { font-size: var(--fs-xs); color: var(--text-muted); margin: -4px 0 12px; line-height: 1.4; }
+.co-subtitle {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  color: var(--text-secondary);
+  margin: 16px 0 10px;
+}
+.co-quote {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--text-secondary);
+}
+.co-quote--free { background: var(--status-ready-bg); color: var(--status-ready-color); }
+.co-quote--paid { background: var(--brand-accent-soft); color: var(--c-orange-900); }
+.co-quote--out_of_range { background: var(--status-pending-bg); color: var(--status-danger-color); }
 .co-warn { font-size: var(--fs-sm); color: var(--status-danger-color); font-weight: var(--fw-semibold); margin-top: 8px; }
 
 .co-item {

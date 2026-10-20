@@ -15,7 +15,11 @@ import AccountHomeView       from '../views/AccountHomeView.vue'
 import AccountOrdersView     from '../views/AccountOrdersView.vue'
 import AccountProfileView    from '../views/AccountProfileView.vue'
 import TermsView             from '../views/TermsView.vue'
-import DeliveryCheckoutView  from '../views/DeliveryCheckoutView.vue'
+import DeliveryPixView       from '../views/DeliveryPixView.vue'
+
+// Finalização da entrega traz o mapa (Leaflet): carrega só quando usada,
+// para não pesar no cardápio da mesa.
+const DeliveryCheckoutView = () => import('../views/DeliveryCheckoutView.vue')
 
 const routes = [
   { path: '/mesa/:token',  name: 'qr-entry', component: QrEntryView },
@@ -37,6 +41,7 @@ const routes = [
   // Entrega — cardápio em modo entrega (carrinho próprio) e finalização
   { path: '/entrega',              name: 'delivery-menu',     component: MenuView,             props: { delivery: true }, meta: { requiresAccount: true } },
   { path: '/entrega/finalizar',    name: 'delivery-checkout', component: DeliveryCheckoutView, meta: { requiresAccount: true } },
+  { path: '/entrega/pix/:paymentId', name: 'delivery-pix',    component: DeliveryPixView,      meta: { requiresAccount: true } },
   { path: '/:pathMatch(.*)*', redirect: '/sem-mesa' },
 ]
 

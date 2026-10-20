@@ -1,6 +1,7 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import api from '../api'
+import StoreLocationMap from '../components/StoreLocationMap.vue'
 
 const restaurant = ref(null)
 const loading    = ref(true)
@@ -26,6 +27,21 @@ const form = ref({
   delivery_min_order: 0,
   delivery_eta_minutes: '',
   delivery_area_note: '',
+  latitude: null,
+  longitude: null,
+  delivery_free_km: '',
+  delivery_max_km: '',
+})
+
+// Ponto da loja no mapa ↔ latitude/longitude do formulário
+const storeLocation = computed({
+  get: () => (form.value.latitude != null && form.value.latitude !== ''
+    ? { lat: Number(form.value.latitude), lng: Number(form.value.longitude) }
+    : null),
+  set: (v) => {
+    form.value.latitude  = v ? v.lat : null
+    form.value.longitude = v ? v.lng : null
+  },
 })
 
 // ── Credenciais MP ── (formulário e flags separados do `form` principal,
@@ -67,6 +83,10 @@ async function fetchRestaurant() {
       delivery_min_order:           Number(r.delivery_min_order ?? 0),
       delivery_eta_minutes:         r.delivery_eta_minutes ?? '',
       delivery_area_note:           r.delivery_area_note || '',
+      latitude:                     r.latitude ?? null,
+      longitude:                    r.longitude ?? null,
+      delivery_free_km:             r.delivery_free_km ?? '',
+      delivery_max_km:              r.delivery_max_km ?? '',
     }
     mpConfigured.value   = !!r.mercadopago_configured
     mpWebhookReady.value = !!r.mercadopago_webhook_ready
@@ -387,8 +407,10 @@ onMounted(fetchRestaurant)
           <h3 class="section-title">🛵 Entrega</h3>
           <p class="section-desc">
             Quando habilitada, clientes com conta no restaurante podem pedir pelo celular
-            para receber em casa, sem estar numa mesa. O pagamento é feito na entrega e os
-            pedidos aparecem na aba <strong>Entregas</strong> do app do Caixa.
+            para receber em casa, sem estar numa mesa. O cliente paga na entrega (dinheiro ou
+            cartão) ou por <strong>PIX pelo app</strong> — este só aparece com o Mercado Pago configurado
+            abaixo, e o pedido só pode ser aceito depois do PIX confirmado. Os pedidos aparecem na
+            aba <strong>Entregas</strong> do app do Caixa.
           </p>
 
           <div class="form-checkbox-stacked">
@@ -404,7 +426,7 @@ onMounted(fetchRestaurant)
               <div class="form-group">
                 <label>Taxa de entrega (R$)</label>
                 <input type="number" min="0" step="0.50" v-model.number="form.delivery_fee" />
-                <p class="hint">0 = entrega grátis.</p>
+                <p class="hint">{{ storeLocation && form.delivery_max_km ? 'Cobrada entre o raio grátis e o máximo.' : '0 = entrega grátis.' }}</p>
               </div>
               <div class="form-group">
                 <label>Pedido mínimo (R$)</label>
@@ -418,6 +440,30 @@ onMounted(fetchRestaurant)
             <div class="form-group">
               <label>Área atendida <span class="field-hint">(mostrada ao cliente)</span></label>
               <input type="text" maxlength="255" v-model="form.delivery_area_note" placeholder="Ex: Ponta Negra, Capim Macio e Lagoa Nova" />
+            </div>
+
+            <!-- Entrega por distância (regra do CheckAutomate) -->
+            <h4 class="settings-subtitle">Taxa por distância <span class="field-hint">(opcional)</span></h4>
+            <p class="hint">
+              Da loja até o raio grátis: sem taxa. Do raio grátis até o máximo: cobra a taxa acima.
+              Além do máximo: não entrega. O cliente marca no mapa onde entregar (ou usa a localização
+              do celular) e vê a taxa na hora. Sem a localização da loja, vale a taxa fixa em qualquer endereço.
+            </p>
+            <StoreLocationMap
+              v-model="storeLocation"
+              :free-km="form.delivery_free_km"
+              :max-km="form.delivery_max_km"
+            />
+            <div class="form-row settings-stack-gap">
+              <div class="form-group">
+                <label>Grátis até (km)</label>
+                <input type="number" min="0" step="0.1" v-model="form.delivery_free_km" placeholder="Ex: 2" />
+              </div>
+              <div class="form-group">
+                <label>Entrega até (km)</label>
+                <input type="number" min="0.1" step="0.1" v-model="form.delivery_max_km" placeholder="Ex: 8" />
+                <p class="hint">Além disso o pedido de entrega é recusado.</p>
+              </div>
             </div>
           </template>
         </div>
@@ -568,6 +614,12 @@ onMounted(fetchRestaurant)
 
 /* Espaçamento entre grupos de checkbox stacked dentro da mesma seção */
 .settings-stack-gap { margin-top: 16px; }
+.settings-subtitle {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  color: var(--admin-text-primary);
+  margin: 22px 0 4px;
+}
 
 .settings-footer {
   display: flex;

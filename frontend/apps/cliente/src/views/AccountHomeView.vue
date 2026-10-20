@@ -100,9 +100,9 @@ async function logout() {
       >
         <span class="acc-action-icon">📱</span>
         <span class="acc-action-body">
-          <span class="acc-action-title">Vincular a uma mesa</span>
+          <span class="acc-action-title">Escanear QR Code</span>
           <span class="acc-action-desc">
-            {{ activeSession ? 'Você tem a Mesa ' + activeSession.table_number + ' aberta — escaneie o QR para voltar' : 'Está no restaurante? Escaneie o QR Code da mesa' }}
+            {{ activeSession ? 'Você tem a Mesa ' + activeSession.table_number + ' aberta — escaneie o QR Code para voltar' : 'Está no restaurante? Escaneie o QR Code da mesa para pedir' }}
           </span>
         </span>
         <span class="acc-action-arrow">→</span>
@@ -117,7 +117,7 @@ async function logout() {
         <span class="acc-action-body">
           <span class="acc-action-title">Pedir para entrega</span>
           <span class="acc-action-desc">
-            Receba em casa{{ account.restaurant.delivery.eta_minutes ? ' · ~' + account.restaurant.delivery.eta_minutes + ' min' : '' }}{{ account.restaurant.delivery.fee > 0 ? ' · taxa ' + formatMoney(account.restaurant.delivery.fee) : ' · entrega grátis' }}
+            Receba em casa{{ account.restaurant.delivery.eta_minutes ? ' · ~' + account.restaurant.delivery.eta_minutes + ' min' : '' }}{{ account.restaurant.delivery.zones ? ' · taxa conforme a distância' : (account.restaurant.delivery.fee > 0 ? ' · taxa ' + formatMoney(account.restaurant.delivery.fee) : ' · entrega grátis') }}
           </span>
         </span>
         <span class="acc-action-arrow">→</span>
