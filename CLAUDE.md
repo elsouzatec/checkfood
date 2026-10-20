@@ -57,6 +57,7 @@ Testes: `php artisan test` (SQLite em memória — o `TestCase` aborta se não f
 - **Sessões de mesa:** `App\Enums\SessionStatus` (`active`/`closing`/`at_cashier`/`closed`). Abertura/retomada em `App\Services\Session\TableSessionService`.
 - **Conta do cliente (por restaurante):** `users` `role=client` + senha (`registered_at`, `User::hasAccount()`); rotas `/api/client/*`. Fundação da carteira digital — ver [CONTA_CLIENTE.md](CONTA_CLIENTE.md) e [CARTEIRA_DIGITAL.md](CARTEIRA_DIGITAL.md).
 - **Rotas de operação exigem papel** (`role:`), não só o restaurante: o cliente da mesa tem token do mesmo tenant.
+- **Entrega:** sessão `type=entrega` sem mesa (`SessionType`), pedidos `origin=delivery` com `table_id` null; ciclo em `DeliveryService`, painel no app Caixa (aba Entregas). Ao buscar "a sessão do cliente na mesa", use `AppSession::atTable()`.
 
 ## Camada de plataforma (super admin)
 

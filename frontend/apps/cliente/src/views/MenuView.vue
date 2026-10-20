@@ -3,11 +3,27 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useCartStore } from '../stores/cart'
+import { useAccountStore } from '../stores/account'
+import { useDeliveryCartStore } from '../stores/deliveryCart'
 import api from '../api'
+import accountApi from '../accountApi'
+
+// Mesmo cardápio para a mesa e para a ENTREGA (rota /entrega, prop delivery).
+// Na entrega: carrinho próprio, faixa fixa avisando o destino e trava para
+// quem está numa mesa — ninguém pede entrega por engano estando no salão.
+var props = defineProps({
+  delivery: { type: Boolean, default: false },
+})
 
 var router = useRouter()
 var auth = useAuthStore()
-var cart = useCartStore()
+var account = useAccountStore()
+var cart = props.delivery ? useDeliveryCartStore() : useCartStore()
+var cartRoute = props.delivery ? '/entrega/finalizar' : '/carrinho'
+
+// Entrega: regras do restaurante e bloqueios ('disabled' | 'at_table')
+var deliveryInfo = ref(null)
+var deliveryBlock = ref('')
 
 var categories = ref([])
 var restaurantInfo = ref(null)
@@ -22,14 +38,35 @@ var qty = ref(1)
 var notes = ref('')
 
 onMounted(async function() {
+  if (props.delivery) {
+    try {
+      var info = await accountApi.get('/client/delivery')
+      deliveryInfo.value = info.data
+      cart.useRestaurant(info.data.restaurant.id)
+      if (info.data.active_table) {
+        deliveryBlock.value = 'at_table'
+      } else if (!info.data.delivery.enabled) {
+        deliveryBlock.value = 'disabled'
+      }
+    } catch (err) {
+      deliveryBlock.value = 'disabled'
+    }
+    if (deliveryBlock.value) {
+      loading.value = false
+      return
+    }
+  }
+
+  var restaurantId = props.delivery ? deliveryInfo.value.restaurant.id : auth.restaurantId
+
   try {
-    var res = await api.get('/restaurants/' + auth.restaurantId + '/menu')
+    var res = await api.get('/restaurants/' + restaurantId + '/menu')
     if (Array.isArray(res.data)) {
       categories.value = res.data
     } else {
       categories.value = res.data.categories || []
       restaurantInfo.value = res.data.restaurant || null
-      if (res.data.restaurant) {
+      if (res.data.restaurant && !props.delivery) {
         localStorage.setItem('pf_show_progress', res.data.restaurant.show_order_progress !== false ? 'true' : 'false')
         // Mantém o branding do header em sincronia com o restaurante carregado
         // (cobre o caso de sessão antiga sem pf_restaurant guardado).
@@ -113,8 +150,42 @@ function formatPrice(price) {
 
 <template>
   <div class="menu-page">
+    <!-- Entrega: header próprio + faixa fixa com o destino do pedido -->
+    <template v-if="delivery">
+      <header class="acc-header">
+        <button class="acc-header-back" aria-label="Voltar" @click="router.push('/minha-conta')">←</button>
+        <div class="acc-header-text">
+          <div class="acc-header-restaurant">{{ deliveryInfo?.restaurant?.name || account.restaurant?.name }}</div>
+          <div class="acc-header-title">Cardápio para entrega</div>
+        </div>
+      </header>
+      <div class="delivery-strip">
+        🛵 Pedido para <strong>ENTREGA</strong> no seu endereço
+        <span v-if="deliveryInfo?.delivery?.eta_minutes"> · ~{{ deliveryInfo.delivery.eta_minutes }} min</span>
+      </div>
+
+      <div v-if="deliveryBlock === 'at_table'" class="delivery-block">
+        <div class="delivery-block-icon">🍽️</div>
+        <h2>Você está na Mesa {{ deliveryInfo.active_table.number }}</h2>
+        <p>Enquanto estiver no restaurante, faça os pedidos pelo cardápio da mesa — eles chegam até você aí.</p>
+        <button v-if="auth.isAuthenticated" class="btn btn-primary" @click="router.push('/cardapio')">Ir para o cardápio da mesa</button>
+        <button class="entry-link" @click="router.push('/minha-conta')">Voltar para minha conta</button>
+      </div>
+
+      <div v-else-if="deliveryBlock === 'disabled'" class="delivery-block">
+        <div class="delivery-block-icon">🛵</div>
+        <h2>Entrega indisponível</h2>
+        <p>Este restaurante não está fazendo entregas no momento.</p>
+        <button class="entry-link" @click="router.push('/minha-conta')">Voltar para minha conta</button>
+      </div>
+
+      <p v-else-if="deliveryInfo?.delivery?.area_note" class="delivery-area">
+        Entregamos em: {{ deliveryInfo.delivery.area_note }}
+      </p>
+    </template>
+
     <!-- Category pills -->
-    <div class="pills-bar" v-if="categories.length">
+    <div class="pills-bar" :class="{ 'pills-bar--delivery': delivery }" v-if="categories.length">
       <div class="pills-scroll">
         <button
           v-for="cat in categories"
@@ -150,7 +221,7 @@ function formatPrice(price) {
     </div>
 
     <!-- Categories + Products -->
-    <div v-else class="menu-content">
+    <div v-else-if="!deliveryBlock" class="menu-content">
       <div v-if="!categories.length" class="empty-menu">
         Nenhum item disponível no momento.
       </div>
@@ -184,10 +255,10 @@ function formatPrice(price) {
     </div>
 
     <!-- Floating cart button -->
-    <div v-if="cart.itemCount > 0 && !showModal" class="cart-float" @click="router.push('/carrinho')">
+    <div v-if="cart.itemCount > 0 && !showModal && !deliveryBlock" class="cart-float" @click="router.push(cartRoute)">
       <div class="cart-float-left">
         <span class="cart-badge">{{ cart.itemCount }}</span>
-        <span>Ver carrinho</span>
+        <span>{{ delivery ? 'Finalizar entrega' : 'Ver carrinho' }}</span>
       </div>
       <span class="cart-float-total">R$ {{ formatPrice(cart.total) }}</span>
     </div>
@@ -231,6 +302,47 @@ function formatPrice(price) {
   min-height: 100vh;
   background: var(--page-bg);
   padding-bottom: 20px;
+}
+
+/* ── Entrega ── */
+.delivery-strip {
+  position: sticky;
+  top: 0;
+  z-index: 16;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: var(--brand-accent);
+  color: #FFFFFF;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+.delivery-strip strong { font-weight: var(--fw-black); letter-spacing: 0.5px; }
+.pills-bar.pills-bar--delivery { top: 40px; }
+.delivery-area {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  text-align: center;
+  padding: 10px 16px 0;
+}
+.delivery-block {
+  text-align: center;
+  padding: 40px 24px;
+}
+.delivery-block-icon { font-size: 44px; margin-bottom: 8px; }
+.delivery-block h2 {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.delivery-block p {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 20px;
 }
 
 /* ── Category pills ── */

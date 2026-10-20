@@ -19,7 +19,7 @@ class WaiterCallController extends Controller
         $user = $request->user();
 
         // Buscar sessão ativa do cliente
-        $session = AppSession::where('user_id', $user->id)
+        $session = AppSession::atTable()->where('user_id', $user->id)
             ->where('status', SessionStatus::ACTIVE)
             ->latest()
             ->first();
@@ -83,7 +83,7 @@ class WaiterCallController extends Controller
     {
         $user = $request->user();
 
-        $session = AppSession::where('user_id', $user->id)
+        $session = AppSession::atTable()->where('user_id', $user->id)
             ->where('status', SessionStatus::ACTIVE)
             ->latest()
             ->first();

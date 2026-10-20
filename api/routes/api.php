@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Caixa\CaixaController;
 use App\Http\Controllers\Caixa\CashierShiftController;
+use App\Http\Controllers\Caixa\DeliveryController;
 use App\Http\Controllers\WaiterSessionController;
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminClientController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\Admin\AdminTeamPerformanceController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Client\ClientAccountController;
 use App\Http\Controllers\Client\ClientAuthController;
+use App\Http\Controllers\Client\ClientDeliveryController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MenuController;
@@ -138,6 +140,10 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::delete('/me',        [ClientAccountController::class, 'destroy']);
         Route::get('/orders',       [ClientAccountController::class, 'orders']);
         Route::post('/tables/link', [ClientAccountController::class, 'linkTable']);
+
+        // Entrega (restaurante com delivery_enabled)
+        Route::get('/delivery',         [ClientDeliveryController::class, 'show']);
+        Route::post('/delivery-orders', [ClientDeliveryController::class, 'store']);
     });
 
     // ── App Caixa ── (roles: cashier, manager)
@@ -149,6 +155,13 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('/sessions/{session}/pix/cancel',         [CaixaController::class, 'cancelPix']);
         Route::get('/history',  [CaixaController::class, 'history']);
         Route::get('/summary',  [CaixaController::class, 'summary']);
+
+        // Entregas (pedido sem mesa): aceitar → saiu → entregue → acerto no caixa
+        Route::get('/deliveries',                     [DeliveryController::class, 'index']);
+        Route::post('/deliveries/{session}/accept',    [DeliveryController::class, 'accept']);
+        Route::post('/deliveries/{session}/dispatch',  [DeliveryController::class, 'dispatch']);
+        Route::post('/deliveries/{session}/delivered', [DeliveryController::class, 'delivered']);
+        Route::post('/deliveries/{session}/cancel',    [DeliveryController::class, 'cancel']);
 
         // Turno de caixa por operador
         Route::get('/shift',        [CashierShiftController::class, 'current']);

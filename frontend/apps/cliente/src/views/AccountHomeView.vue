@@ -49,6 +49,10 @@ function onScanError(message) {
   error.value = message
 }
 
+function formatMoney(val) {
+  return Number(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
 async function logout() {
   await account.logout()
   router.replace('/')
@@ -99,6 +103,21 @@ async function logout() {
           <span class="acc-action-title">Vincular a uma mesa</span>
           <span class="acc-action-desc">
             {{ activeSession ? 'Você tem a Mesa ' + activeSession.table_number + ' aberta — escaneie o QR para voltar' : 'Está no restaurante? Escaneie o QR Code da mesa' }}
+          </span>
+        </span>
+        <span class="acc-action-arrow">→</span>
+      </button>
+
+      <button
+        v-if="account.restaurant?.delivery?.enabled"
+        class="acc-action"
+        @click="router.push('/entrega')"
+      >
+        <span class="acc-action-icon">🛵</span>
+        <span class="acc-action-body">
+          <span class="acc-action-title">Pedir para entrega</span>
+          <span class="acc-action-desc">
+            Receba em casa{{ account.restaurant.delivery.eta_minutes ? ' · ~' + account.restaurant.delivery.eta_minutes + ' min' : '' }}{{ account.restaurant.delivery.fee > 0 ? ' · taxa ' + formatMoney(account.restaurant.delivery.fee) : ' · entrega grátis' }}
           </span>
         </span>
         <span class="acc-action-arrow">→</span>

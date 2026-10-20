@@ -83,14 +83,36 @@ Leitor de QR com fallback `jsQR` (iPhone não tem `BarcodeDetector`).
 - [ ] `payments` desacoplado da sessão de mesa (recarga feita pela conta, fora da mesa) — **mesmo
       pré-requisito da entrega**; fazer uma vez só.
 
-### Fase 3 — Entrega (restaurante + filiais)
-- [ ] Depende de **filiais** (`branches`, evolução prevista em ARQUITETURA.md) para listar as unidades.
-- [ ] `delivery_enabled` + `delivery_config` por restaurante; endereços da conta; pedido sem mesa
-      (`orders.session_id/table_id` nullable, `origin=delivery`); `pronto → em_rota → entregue`; fila de entrega.
+### Fase 3 — Entrega — **básico implementado (branch `feat/entrega`, 2026-10-20)**
 
-## 8. Deploy (quando aprovado)
+Como funciona:
+- **Liga/desliga por restaurante** em Admin → Configurações → Entrega: taxa fixa, pedido mínimo,
+  tempo estimado e área atendida (texto). Desligar para novos pedidos na hora.
+- **Só cliente com conta** pede entrega: Minha conta → "Pedir para entrega" → cardápio em **modo entrega**
+  (faixa laranja fixa "Pedido para ENTREGA", carrinho próprio, separado do da mesa) → finalizar
+  (endereço, pagamento na entrega, troco) → **confirmação explícita do endereço** → enviado.
+- **Nunca por omissão:** a API exige `fulfillment: "delivery"`, e quem está numa mesa aberta é barrado
+  (409 `has_active_table`) e levado ao cardápio da mesa — ninguém pede entrega estando no salão.
+- **Modelo:** cada entrega é uma sessão `type=entrega` sem mesa (`sessions_app.table_id` null), com
+  endereço, taxa, forma de pagamento e troco. Os pedidos (`origin=delivery`, `table_id` null) são
+  divididos por setor na aprovação como os da mesa. A taxa entra no total da sessão.
+- **Restaurante (app Caixa → aba Entregas):** novas (aceitar/recusar) → em preparo (cozinha vê
+  "🛵 Entrega" no KDS) → saiu para entrega → entregue → acerto na tela de sessão de sempre.
+  O garçom não vê entregas.
+- **Cliente acompanha** em Meus pedidos: aguardando → em preparo → saiu para entrega → entregue.
 
-1. Merge de `fix/rotas-staff-exigem-papel` (pode ir antes, sozinho) e depois `feat/conta-cliente`.
-2. `php artisan migrate` (1 migration; dados atuais não têm telefone de cliente duplicado — verificado).
-3. `npm install` em `frontend/apps/cliente` (dependência nova: `jsqr`).
-4. `npm run build` em `frontend/apps/cliente` e `frontend/apps/admin` — o build JÁ publica.
+Ainda não:
+- [ ] Filiais (`branches`) — a conta e a entrega já valem no restaurante inteiro; listar unidades virá com elas.
+- [ ] Pagamento online antecipado (PIX pelo app) — hoje é só na entrega.
+- [ ] Taxa por bairro/distância, horário de funcionamento automático e retirada no balcão.
+- [ ] Faturamento de entregas nos relatórios do admin: os itens já contam; a taxa de entrega aparece no caixa, mas não nos relatórios de produtos.
+
+## 8. Deploy
+
+Conta do cliente — **no ar desde 2026-10-19** (`fix/rotas-staff-exigem-papel` + `feat/conta-cliente`).
+
+Entrega (`feat/entrega`), quando aprovado:
+1. Merge de `feat/entrega` na `main`.
+2. `php artisan migrate --force` (1 migration: colunas de entrega + `orders.table_id` aceita null) e
+   `php artisan config:cache && php artisan route:cache`.
+3. `npm run build` em `frontend/apps/cliente`, `caixa`, `cozinha` e `admin` — o build JÁ publica.

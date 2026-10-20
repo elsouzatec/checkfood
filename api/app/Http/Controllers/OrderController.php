@@ -8,7 +8,7 @@ use App\Models\AppSession;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
-use App\Services\Print\PrintService;
+use App\Services\Order\OrderApprovalService;
 use App\Services\Stock\StockService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,7 +17,7 @@ class OrderController extends Controller
 {
     public function __construct(
         private StockService $stockService,
-        private PrintService $printService
+        private OrderApprovalService $approvalService
     ) {}
 
     /**
@@ -34,7 +34,9 @@ class OrderController extends Controller
 
         $user = $request->user();
 
-        $session = AppSession::where('user_id', $user->id)
+        // Só a mesa: pedido de entrega tem endpoint próprio (/client/delivery-orders).
+        $session = AppSession::atTable()
+            ->where('user_id', $user->id)
             ->where('status', SessionStatus::ACTIVE)
             ->latest()
             ->first();
@@ -78,7 +80,8 @@ class OrderController extends Controller
     {
         $user = $request->user();
 
-        $session = AppSession::where('user_id', $user->id)
+        $session = AppSession::atTable()
+            ->where('user_id', $user->id)
             ->where('status', SessionStatus::ACTIVE)
             ->latest()
             ->first();
@@ -102,7 +105,9 @@ class OrderController extends Controller
     {
         $user = $request->user();
 
+        // Entregas (sem mesa) são aprovadas no caixa, não pelo garçom.
         $orders = Order::where('restaurant_id', $user->restaurant_id)
+            ->whereNotNull('table_id')
             ->where('status', OrderStatus::PENDENTE_VALIDACAO)
             ->with(['items.product.category', 'table', 'user'])
             ->orderBy('created_at')
@@ -148,7 +153,9 @@ class OrderController extends Controller
     {
         $user = $request->user();
 
+        // Entregas prontas saem pelo caixa, não vão para o garçom levar à mesa.
         $orders = Order::where('restaurant_id', $user->restaurant_id)
+            ->whereNotNull('table_id')
             ->where('status', OrderStatus::PRONTO)
             ->with(['items.product.category', 'table'])
             ->orderBy('ready_at')
@@ -187,79 +194,15 @@ class OrderController extends Controller
             ], 422);
         }
 
-        // Vincular garçom à sessão (primeira aprovação)
-        $session = AppSession::find($order->session_id);
-        if ($session && !$session->waiter_id) {
-            $session->update(['waiter_id' => $request->user()->id]);
-        }
-
-        $order->load('items.product.category');
-
-        // Agrupar itens por preparation_area
-        $groups = $order->items->groupBy(function ($item) {
-            return $item->product->category->preparation_area ?? 'cozinha';
-        });
-
-        if ($groups->count() <= 1) {
-            $order->transitionTo(OrderStatus::CONFIRMADO);
-
-            // Abate estoque
-            $alerts = $this->stockService->deductForOrder($order);
-
-            // Enfileira impressão (se habilitado no restaurante)
-            $this->printService->enqueueForOrder($order);
-
-            return response()->json([
-                'message' => 'Pedido aprovado.',
-                'orders' => [$order->fresh('items.product.category')],
-                'stock_alerts' => $alerts,
-            ]);
-        }
-
-        // Múltiplos setores — dividir em sub-pedidos
-        $subOrders = [];
-        $allAlerts = [];
-
-        foreach ($groups as $area => $items) {
-            $subOrder = Order::create([
-                'restaurant_id' => $order->restaurant_id,
-                'session_id' => $order->session_id,
-                'table_id' => $order->table_id,
-                'user_id' => $order->user_id,
-                'status' => OrderStatus::CONFIRMADO,
-                'origin' => $order->origin,
-                'confirmed_at' => now(),
-            ]);
-
-            foreach ($items as $item) {
-                OrderItem::create([
-                    'order_id' => $subOrder->id,
-                    'product_id' => $item->product_id,
-                    'quantity' => $item->quantity,
-                    'unit_price' => $item->unit_price,
-                    'notes' => $item->notes,
-                ]);
-            }
-
-            $subOrder->load('items.product.category');
-
-            // Abate estoque do sub-pedido
-            $alerts = $this->stockService->deductForOrder($subOrder);
-            $allAlerts = array_merge($allAlerts, $alerts);
-
-            // Enfileira impressão por setor (1 cupom por sub-pedido)
-            $this->printService->enqueueForOrder($subOrder);
-
-            $subOrders[] = $subOrder;
-        }
-
-        $order->items()->delete();
-        $order->delete();
+        $result = $this->approvalService->approve($order, $request->user());
+        $count  = count($result['orders']);
 
         return response()->json([
-            'message' => 'Pedido aprovado e separado por setor (' . $groups->count() . ' sub-pedidos).',
-            'orders' => $subOrders,
-            'stock_alerts' => $allAlerts,
+            'message' => $count > 1
+                ? 'Pedido aprovado e separado por setor (' . $count . ' sub-pedidos).'
+                : 'Pedido aprovado.',
+            'orders'       => $result['orders'],
+            'stock_alerts' => $result['stock_alerts'],
         ]);
     }
 

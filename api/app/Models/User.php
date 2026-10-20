@@ -17,22 +17,24 @@ class User extends Authenticatable
     protected $fillable = [
         'restaurant_id', 'name', 'apelido', 'phone', 'email', 'password', 'role', 'is_active',
         'registered_at', 'terms_accepted_at', 'terms_version', 'history_visible_from',
+        'last_delivery_address',
     ];
 
     protected $hidden = [
-        'password', 'remember_token',
+        'password', 'remember_token', 'last_delivery_address',
     ];
 
     protected function casts(): array
     {
         return [
-            'email_verified_at'    => 'datetime',
-            'password'             => 'hashed',
-            'role'                 => UserRole::class,
-            'is_active'            => 'boolean',
-            'registered_at'        => 'datetime',
-            'terms_accepted_at'    => 'datetime',
-            'history_visible_from' => 'datetime',
+            'email_verified_at'     => 'datetime',
+            'password'              => 'hashed',
+            'role'                  => UserRole::class,
+            'is_active'             => 'boolean',
+            'registered_at'         => 'datetime',
+            'terms_accepted_at'     => 'datetime',
+            'history_visible_from'  => 'datetime',
+            'last_delivery_address' => 'array',
         ];
     }
 

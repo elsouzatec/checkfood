@@ -227,10 +227,18 @@ onUnmounted(stopPixPolling)
         <header class="cx-session__head">
           <div class="cx-session__head-id">
             <h1 class="cx-session__mesa">
-              {{ session.table?.name || `Mesa ${session.table?.number}` }}
+              {{ session.type === 'entrega' ? '🛵 Entrega' : (session.table?.name || `Mesa ${session.table?.number}`) }}
             </h1>
             <span
-              v-if="session.guest_name"
+              v-if="session.type === 'entrega'"
+              class="cx-session__guest"
+            >
+              {{ session.delivery?.customer_name }} · {{ session.delivery?.address }}
+              <template v-if="session.delivery?.fee"> · taxa {{ formatPrice(session.delivery.fee) }}</template>
+              <template v-if="session.delivery?.change_for"> · troco p/ {{ formatPrice(session.delivery.change_for) }}</template>
+            </span>
+            <span
+              v-else-if="session.guest_name"
               class="cx-session__guest"
             >{{ session.guest_name }}</span>
             <span v-else class="cx-session__guest cx-session__guest--empty">
@@ -238,7 +246,8 @@ onUnmounted(stopPixPolling)
             </span>
           </div>
           <div class="cx-session__head-meta">
-            <span>Garçom: <strong>{{ session.waiter?.apelido || session.waiter?.name || '—' }}</strong></span>
+            <span v-if="session.type === 'entrega'">Cliente: <strong>{{ session.delivery?.customer_phone }}</strong></span>
+            <span v-else>Garçom: <strong>{{ session.waiter?.apelido || session.waiter?.name || '—' }}</strong></span>
             <span>Chegou às <strong>{{ formatTime(session.at_cashier_at) }}</strong></span>
             <span
               v-if="session.payment_method_chosen"
@@ -290,6 +299,13 @@ onUnmounted(stopPixPolling)
                 <div v-if="item.notes" class="cx-order__notes">⚠ {{ item.notes }}</div>
               </li>
             </ul>
+          </div>
+          <div v-if="session.type === 'entrega' && session.delivery?.fee" class="cx-order">
+            <div class="cx-order__head">
+              <span class="cx-order__id">🛵</span>
+              <span class="cx-order__time">Taxa de entrega</span>
+              <span class="cx-order__total">{{ formatPrice(session.delivery.fee) }}</span>
+            </div>
           </div>
         </section>
 

@@ -17,15 +17,18 @@ class PaymentService
     ) {}
 
     /**
-     * Calcula o total da sessão (pedidos não cancelados).
+     * Calcula o total da sessão (pedidos não cancelados + taxa de entrega).
      */
     public function calculateSessionTotal(AppSession $session): float
     {
-        return (float) DB::table('orders')
+        $items = (float) DB::table('orders')
             ->join('order_items', 'orders.id', '=', 'order_items.order_id')
             ->where('orders.session_id', $session->id)
             ->where('orders.status', '!=', 'cancelado')
             ->sum(DB::raw('order_items.unit_price * order_items.quantity'));
+
+        // Entrega: taxa entra na conta (só se sobrou item a pagar).
+        return $items > 0 ? $items + (float) $session->delivery_fee : 0.0;
     }
 
     /**

@@ -66,6 +66,10 @@ Conta **por restaurante** (ver [CONTA_CLIENTE.md](CONTA_CLIENTE.md)). Token da c
 | DELETE | `/client/me` | Exclui a conta (exige `password`; 409 com mesa aberta): anonimiza nome/telefone/senha. |
 | GET | `/client/orders` | Histórico paginado (a partir de `history_visible_from`). |
 | POST | `/client/tables/link` | `table_token` → abre/retoma a sessão da mesa; mesma resposta de `POST /sessions`. Mesa de outro restaurante → 409 `other_restaurant`. |
+| GET | `/client/delivery` | Regras de entrega do restaurante (`delivery`), último endereço, `active_table` (mesa aberta, se houver) e formas de pagamento. |
+| POST | `/client/delivery-orders` | Pedido para entrega. Body: `fulfillment: "delivery"` (obrigatório), `items[]`, `address{street, number, complement?, district, reference?}`, `payment_method` (`dinheiro`/`cartao`/`pix`, na entrega), `change_for?`, `notes?`. Erros: 422 `delivery_disabled`/`below_min_order`/`invalid_change`/`unavailable_items`; 409 `has_active_table`. Preço vem do cardápio. |
+
+`GET /client/orders` traz `session_id` e `type` (`mesa`/`entrega`) por pedido e um mapa `deliveries` (por sessão: `stage` aguardando/em_preparo/a_caminho/entregue/cancelado, `address_line`, `fee`, `payment_method`, `change_for`).
 
 `/client/me` (PUT/DELETE), `/client/orders` e `/client/tables/link` exigem conta (403 para o cliente anônimo da mesa).
 
@@ -75,6 +79,8 @@ Conta **por restaurante** (ver [CONTA_CLIENTE.md](CONTA_CLIENTE.md)). Token da c
 - `POST /caixa/sessions/{session}/pix` · `POST /caixa/sessions/{session}/pix/cancel`
 - `GET /caixa/history` · `GET /caixa/summary`
 - Turno: `GET /caixa/shift` · `POST /caixa/shift/open` · `POST /caixa/shift/close`
+- **Entregas:** `GET /caixa/deliveries` (em andamento + encerradas hoje) · `POST /caixa/deliveries/{session}/accept` (aprova: divide por setor, estoque, impressão) · `/dispatch` (saiu para entrega) · `/delivered` (vai para a fila do caixa, AT_CASHIER) · `/cancel` (`reason`). O acerto é o `confirm-payment` de sempre; o total inclui a taxa de entrega.
+- Fila, detalhe e histórico trazem `type` (`mesa`/`entrega`) e `delivery` (cliente, endereço, taxa, troco).
 
 ## Plataforma — `role:super_admin`, prefixo `/platform`
 

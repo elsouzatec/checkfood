@@ -190,7 +190,7 @@ class SessionController extends Controller
     public function check(Request $request): JsonResponse
     {
         $user    = $request->user();
-        $session = AppSession::where('user_id', $user->id)->latest()->first();
+        $session = AppSession::atTable()->where('user_id', $user->id)->latest()->first();
 
         if (!$session) {
             return response()->json(['active' => false, 'message' => 'Nenhuma sessão encontrada.'], 410);

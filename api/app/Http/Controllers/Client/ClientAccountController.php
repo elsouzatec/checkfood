@@ -8,6 +8,7 @@ use App\Models\AppSession;
 use App\Models\Order;
 use App\Models\Table;
 use App\Models\User;
+use App\Services\Delivery\DeliveryService;
 use App\Services\Session\TableSessionService;
 use App\Services\Session\TableUnavailableException;
 use Illuminate\Http\JsonResponse;
@@ -23,7 +24,10 @@ use Laravel\Sanctum\PersonalAccessToken;
  */
 class ClientAccountController extends Controller
 {
-    public function __construct(private TableSessionService $tableSessions) {}
+    public function __construct(
+        private TableSessionService $tableSessions,
+        private DeliveryService $deliveries
+    ) {}
 
     /**
      * GET /api/client/me
@@ -31,7 +35,7 @@ class ClientAccountController extends Controller
     public function show(Request $request): JsonResponse
     {
         $user    = $request->user();
-        $session = AppSession::where('user_id', $user->id)
+        $session = AppSession::atTable()->where('user_id', $user->id)
             ->whereIn('status', [SessionStatus::ACTIVE->value, SessionStatus::CLOSING->value])
             ->with('table:id,number')
             ->latest()
@@ -46,6 +50,7 @@ class ClientAccountController extends Controller
                 'slug'     => $restaurant->slug,
                 'name'     => $restaurant->name,
                 'logo_url' => $restaurant->logo_url,
+                'delivery' => $restaurant->deliveryConfig(),
             ],
             'active_session' => $session ? [
                 'id'           => $session->id,
@@ -138,12 +143,28 @@ class ClientAccountController extends Controller
 
         $page = Order::where('user_id', $user->id)
             ->when($user->history_visible_from, fn ($q, $from) => $q->where('created_at', '>=', $from))
-            ->with(['items.product:id,name', 'table:id,number'])
+            ->with(['items.product:id,name', 'table:id,number', 'session'])
             ->orderByDesc('created_at')
             ->paginate(20);
 
+        // Uma entrega pode virar vários pedidos (um por setor) — o app agrupa
+        // pela sessão e mostra etapa, endereço e taxa uma vez só.
+        $deliveries = $page->getCollection()
+            ->map->session
+            ->filter(fn ($s) => $s?->isDelivery())
+            ->unique('id')
+            ->mapWithKeys(fn (AppSession $s) => [$s->id => [
+                'stage'          => $this->deliveries->stage($s),
+                'address_line'   => $s->deliveryAddressLine(),
+                'fee'            => (float) $s->delivery_fee,
+                'payment_method' => $s->payment_method_chosen,
+                'change_for'     => $s->change_for !== null ? (float) $s->change_for : null,
+            ]]);
+
         $page->getCollection()->transform(fn (Order $order) => [
             'id'           => $order->id,
+            'session_id'   => $order->session_id,
+            'type'         => $order->session?->isDelivery() ? 'entrega' : 'mesa',
             'status'       => $order->status->value,
             'created_at'   => $order->created_at?->toIso8601String(),
             'table_number' => $order->table?->number,
@@ -156,7 +177,7 @@ class ClientAccountController extends Controller
             ])->all(),
         ]);
 
-        return response()->json($page);
+        return response()->json(array_merge($page->toArray(), ['deliveries' => (object) $deliveries->all()]));
     }
 
     /**

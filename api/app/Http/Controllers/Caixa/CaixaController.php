@@ -52,6 +52,7 @@ class CaixaController extends Controller
             ->with([
                 'table:id,number',
                 'waiter:id,name,apelido',
+                'user:id,name,phone',
                 'orders.items',
             ])
             ->orderBy('at_cashier_at', 'asc')
@@ -73,6 +74,8 @@ class CaixaController extends Controller
                     'name'   => $s->table?->name,
                 ],
                 'guest_name'            => $s->guest_name,
+                'type'                  => $s->type->value,
+                'delivery'              => $this->deliveryInfo($s),
                 'waiter' => [
                     'id'      => $s->waiter?->id,
                     'name'    => $s->waiter?->name,
@@ -112,6 +115,7 @@ class CaixaController extends Controller
             ->with([
                 'table:id,number',
                 'waiter:id,name,apelido',
+                'user:id,name,phone',
                 'orders.items.product:id,name',
             ])
             ->find($sessionId);
@@ -155,6 +159,8 @@ class CaixaController extends Controller
             'id'                    => $session->id,
             'status'                => $session->status->value,
             'guest_name'            => $session->guest_name,
+            'type'                  => $session->type->value,
+            'delivery'              => $this->deliveryInfo($session),
             'table' => [
                 'id'     => $session->table?->id,
                 'number' => $session->table?->number,
@@ -403,7 +409,7 @@ class CaixaController extends Controller
         $sessionIds = $payments->pluck('session_id')->unique()->values();
 
         $sessions = AppSession::whereIn('id', $sessionIds)
-            ->with(['table:id,number', 'waiter:id,name,apelido'])
+            ->with(['table:id,number', 'waiter:id,name,apelido', 'user:id,name,phone'])
             ->orderBy('closed_at', 'desc')
             ->get();
 
@@ -415,6 +421,8 @@ class CaixaController extends Controller
                 'id'         => $s->id,
                 'table'      => ['number' => $s->table?->number],
                 'guest_name' => $s->guest_name,
+                'type'       => $s->type->value,
+                'delivery'   => $this->deliveryInfo($s),
                 'waiter'     => $s->waiter?->apelido ?? $s->waiter?->name ?? '—',
                 'closed_at'  => $s->closed_at?->toIso8601String(),
                 'total'      => round($pays->sum('amount'), 2),
@@ -483,9 +491,32 @@ class CaixaController extends Controller
      */
     private function calcSessionTotal(AppSession $session): float
     {
-        return (float) $this->billableOrders($session)->sum(
+        $items = (float) $this->billableOrders($session)->sum(
             fn ($o) => $o->items->sum(fn ($i) => $i->unit_price * $i->quantity)
         );
+
+        // Entrega: taxa entra na conta (só se sobrou item a pagar).
+        return $items > 0 ? $items + (float) $session->delivery_fee : 0.0;
+    }
+
+    /**
+     * Dados da entrega para o caixa (null quando é mesa).
+     */
+    private function deliveryInfo(AppSession $session): ?array
+    {
+        if (!$session->isDelivery()) {
+            return null;
+        }
+
+        return [
+            'customer_name'  => $session->user?->name,
+            'customer_phone' => $session->user?->phone,
+            'address'        => $session->deliveryAddressLine(),
+            'reference'      => $session->delivery_address['reference'] ?? null,
+            'fee'            => (float) $session->delivery_fee,
+            'change_for'     => $session->change_for !== null ? (float) $session->change_for : null,
+            'notes'          => $session->delivery_notes,
+        ];
     }
 
     /**

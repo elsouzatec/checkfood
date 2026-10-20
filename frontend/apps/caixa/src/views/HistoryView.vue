@@ -40,7 +40,7 @@ const groupedByWaiter = computed(() => {
 const groupedByTable = computed(() => {
   const map = {}
   for (const s of sessions.value) {
-    const key = s.table?.number ?? '?'
+    const key = s.type === 'entrega' ? 'Entrega' : (s.table?.number ?? '?')
     if (!map[key]) map[key] = { key, sessions: [], total: 0 }
     map[key].sessions.push(s)
     map[key].total += s.total
@@ -124,7 +124,7 @@ onMounted(fetchAll)
         class="cx-srow"
         @click="navigateToSession(s.id)"
       >
-        <span class="cx-srow__mesa">Mesa {{ s.table?.number ?? '—' }}</span>
+        <span class="cx-srow__mesa">{{ s.type === 'entrega' ? '🛵 Entrega' : 'Mesa ' + (s.table?.number ?? '—') }}</span>
         <span
           class="cx-srow__guest"
           :class="{ 'cx-srow__guest--empty': !s.guest_name }"
@@ -165,7 +165,7 @@ onMounted(fetchAll)
             class="cx-srow cx-srow--ingroup"
             @click="navigateToSession(s.id)"
           >
-            <span class="cx-srow__mesa">Mesa {{ s.table?.number ?? '—' }}</span>
+            <span class="cx-srow__mesa">{{ s.type === 'entrega' ? '🛵 Entrega' : 'Mesa ' + (s.table?.number ?? '—') }}</span>
             <span
               class="cx-srow__guest"
               :class="{ 'cx-srow__guest--empty': !s.guest_name }"
@@ -193,7 +193,7 @@ onMounted(fetchAll)
           @click="toggleGroup('table:' + group.key)"
         >
           <span class="cx-group__icon" aria-hidden="true">🪑</span>
-          <span class="cx-group__name">Mesa {{ group.key }}</span>
+          <span class="cx-group__name">{{ group.key === 'Entrega' ? '🛵 Entregas' : 'Mesa ' + group.key }}</span>
           <span class="cx-group__count">
             {{ group.sessions.length }} atend.
           </span>
