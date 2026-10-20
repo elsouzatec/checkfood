@@ -82,7 +82,16 @@ class AdminRestaurantController extends Controller
             'delivery_min_order'           => 'sometimes|numeric|min:0|max:10000',
             'delivery_eta_minutes'         => 'sometimes|nullable|integer|min:5|max:300',
             'delivery_area_note'           => 'sometimes|nullable|string|max:255',
+            // Entrega por distância: localização da loja + faixas em km
+            'latitude'                     => 'sometimes|nullable|numeric|between:-90,90|required_with:longitude',
+            'longitude'                    => 'sometimes|nullable|numeric|between:-180,180|required_with:latitude',
+            'delivery_free_km'             => 'sometimes|nullable|numeric|min:0|max:100',
+            'delivery_max_km'              => 'sometimes|nullable|numeric|min:0.1|max:100',
         ]);
+
+        if (isset($data['delivery_max_km'], $data['delivery_free_km']) && $data['delivery_max_km'] < $data['delivery_free_km']) {
+            return response()->json(['message' => 'O raio máximo de entrega precisa ser maior que o raio grátis.'], 422);
+        }
 
         // $request->boolean() garante conversão correta independente do formato recebido
         if ($request->has('cashier_mode')) {

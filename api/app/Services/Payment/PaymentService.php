@@ -93,7 +93,8 @@ class PaymentService
         $gateway = $this->gatewayFactory->forRestaurant($restaurant);
 
         $chargeData = $gateway->createPixCharge($payment, [
-            'table_number'    => $table->number,
+            'label'           => $session->isDelivery() ? 'Entrega #' . $session->id : 'Mesa ' . $table?->number,
+            'table_number'    => $table?->number,
             'restaurant_name' => $restaurant->name,
             'client_name'     => $client->name ?? 'Cliente',
         ]);
@@ -151,7 +152,12 @@ class PaymentService
                 'paid_at'        => now(),
             ]);
 
-            $this->closeSession($payment->session);
+            // Entrega paga pelo app (PIX antecipado): o pedido ainda vai ser
+            // preparado e entregue — só registra o pagamento. A sessão fecha
+            // quando a entrega for concluída (DeliveryService::markDelivered).
+            if (!$payment->session->isDelivery()) {
+                $this->closeSession($payment->session);
+            }
         });
 
         Log::info('Payment confirmed via webhook', ['payment_id' => $payment->id]);
@@ -174,6 +180,6 @@ class PaymentService
 
         $session->markAsClosed();
 
-        $session->table->update(['status' => TableStatus::LIVRE->value]);
+        $session->table?->update(['status' => TableStatus::LIVRE->value]);
     }
 }

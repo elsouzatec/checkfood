@@ -8,11 +8,14 @@ use App\Enums\SessionType;
 use App\Models\AppSession;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Restaurant;
 use App\Models\User;
 use App\Services\Order\OrderApprovalService;
+use App\Services\Payment\PaymentService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
@@ -21,23 +24,36 @@ use Illuminate\Support\Str;
  * Cada entrega é uma sessão do tipo 'entrega' (sem mesa) com um pedido
  * origin='delivery'. Ciclo, conduzido pelo caixa:
  *   cliente faz o pedido → aceita (aprova: divide por setor, estoque, impressão)
- *   → cozinha prepara → saiu para entrega → entregue (vai para o caixa, AT_CASHIER)
- *   → caixa confirma o pagamento (fluxo de sempre) → sessão fechada.
- * Pagamento é na entrega (dinheiro, cartão ou PIX na maquininha do entregador).
+ *   → cozinha prepara → saiu para entrega → entregue → sessão fechada.
+ *
+ * Pagamento: PIX pelo app (antecipado — o restaurante só aceita depois de pago)
+ * ou dinheiro/cartão na entrega (acertado no caixa ao marcar "entregue").
+ * Taxa: pela distância da loja (DeliveryZones) ou fixa, se a loja não tem zonas.
  */
 class DeliveryService
 {
-    /** Formas de pagamento na entrega (mesmos valores do caixa). */
-    public const PAYMENT_METHODS = ['dinheiro', 'cartao', 'pix'];
+    /** pix = pelo app, antecipado; dinheiro/cartao = na entrega. */
+    public const PAYMENT_METHODS = ['pix', 'dinheiro', 'cartao'];
 
-    public function __construct(private OrderApprovalService $approvalService) {}
+    public function __construct(
+        private OrderApprovalService $approvalService,
+        private DeliveryZones $zones,
+        private PaymentService $payments,
+    ) {}
+
+    /** Cotação para um ponto (o app mostra antes de fechar o pedido). */
+    public function quote(Restaurant $restaurant, ?float $lat, ?float $lng): DeliveryQuote
+    {
+        return $this->zones->quote($restaurant, $lat, $lng);
+    }
 
     /**
-     * @param  array{items: array, address: array, payment_method: string, change_for?: ?float, notes?: ?string}  $data
+     * @param  array{items: array, address: array, location?: ?array, payment_method: string, change_for?: ?float, notes?: ?string}  $data
+     * @return array{session: AppSession, payment: ?Payment}
      *
      * @throws DeliveryException
      */
-    public function place(User $client, array $data): AppSession
+    public function place(User $client, array $data): array
     {
         $restaurant = $client->restaurant;
 
@@ -61,6 +77,27 @@ class DeliveryService
             );
         }
 
+        $lat   = isset($data['location']['lat']) ? (float) $data['location']['lat'] : null;
+        $lng   = isset($data['location']['lng']) ? (float) $data['location']['lng'] : null;
+        $quote = $this->zones->quote($restaurant, $lat, $lng);
+
+        if ($quote->status === 'unknown') {
+            throw new DeliveryException('Marque no mapa onde entregar (ou use sua localização).', 422, 'location_required');
+        }
+        if ($quote->status === 'out_of_range') {
+            throw new DeliveryException(
+                'Este endereço fica a ' . number_format($quote->distanceKm, 1, ',', '.') . ' km — fora da área de entrega.',
+                422,
+                'out_of_range'
+            );
+        }
+
+        $method = $data['payment_method'];
+
+        if ($method === 'pix' && !$restaurant->acceptsOnlinePix()) {
+            throw new DeliveryException('PIX pelo app não está disponível neste restaurante.', 422, 'pix_unavailable');
+        }
+
         $lines    = $this->priceItems($restaurant, $data['items']);
         $subtotal = array_sum(array_map(fn ($l) => $l['unit_price'] * $l['quantity'], $lines));
 
@@ -72,17 +109,20 @@ class DeliveryService
             );
         }
 
-        $method   = $data['payment_method'];
         $changeFor = $method === 'dinheiro' && !empty($data['change_for']) ? (float) $data['change_for'] : null;
-        $total    = $subtotal + (float) $restaurant->delivery_fee;
+        $total     = $subtotal + $quote->fee;
 
         if ($changeFor !== null && $changeFor < $total) {
             throw new DeliveryException('O troco precisa ser para um valor maior que o total do pedido.', 422, 'invalid_change');
         }
 
         $address = $this->cleanAddress($data['address']);
+        if ($lat !== null && $lng !== null) {
+            $address['lat'] = $lat;
+            $address['lng'] = $lng;
+        }
 
-        return DB::transaction(function () use ($client, $restaurant, $lines, $address, $method, $changeFor, $data) {
+        [$session, $payment] = DB::transaction(function () use ($client, $restaurant, $lines, $address, $method, $changeFor, $data, $quote, $lat, $lng, $total) {
             $session = AppSession::create([
                 'restaurant_id'         => $restaurant->id,
                 'table_id'              => null,
@@ -92,7 +132,10 @@ class DeliveryService
                 'status'                => SessionStatus::ACTIVE,
                 'type'                  => SessionType::ENTREGA,
                 'delivery_address'      => $address,
-                'delivery_fee'          => $restaurant->delivery_fee,
+                'delivery_fee'          => $quote->fee,
+                'delivery_lat'          => $lat,
+                'delivery_lng'          => $lng,
+                'delivery_distance_km'  => $quote->distanceKm,
                 'delivery_notes'        => $data['notes'] ?? null,
                 'payment_method_chosen' => $method,
                 'change_for'            => $changeFor,
@@ -113,18 +156,46 @@ class DeliveryService
 
             $client->update(['last_delivery_address' => $address]);
 
-            return $session;
+            $payment = $method === 'pix'
+                ? Payment::create([
+                    'restaurant_id' => $restaurant->id,
+                    'session_id'    => $session->id,
+                    'amount'        => round($total, 2),
+                    'method'        => 'pix',
+                    'status'        => 'pending',
+                    'created_by'    => 'client',
+                ])
+                : null;
+
+            return [$session, $payment];
         });
+
+        // A cobrança no Mercado Pago fica fora da transação: se o gateway
+        // falhar, o pedido existe e o cliente gera o PIX de novo pelo app.
+        if ($payment) {
+            try {
+                $payment = $this->payments->payWithPix($payment, $session->load(['restaurant', 'user']));
+            } catch (\Throwable $e) {
+                Log::warning('Entrega: falha ao gerar PIX', ['session_id' => $session->id, 'error' => $e->getMessage()]);
+            }
+        }
+
+        return ['session' => $session, 'payment' => $payment];
     }
 
     /**
      * Restaurante aceita: aprova os pedidos pendentes (setor, estoque, impressão).
+     * Entrega com PIX pelo app só é aceita depois de paga.
      *
      * @throws DeliveryException
      */
     public function accept(AppSession $session, User $staff): void
     {
         $this->assertOpen($session);
+
+        if ($session->payment_method_chosen === 'pix' && !$this->isPaid($session)) {
+            throw new DeliveryException('Aguardando o cliente pagar o PIX.', 422, 'awaiting_payment');
+        }
 
         $pending = $session->orders()->where('status', OrderStatus::PENDENTE_VALIDACAO->value)->get();
 
@@ -170,7 +241,8 @@ class DeliveryService
     }
 
     /**
-     * Entregue ao cliente: vai para o caixa acertar o pagamento.
+     * Entregue ao cliente. Já pago (PIX pelo app) → encerra; senão vai para o
+     * caixa acertar o pagamento recebido na entrega.
      *
      * @throws DeliveryException
      */
@@ -182,12 +254,25 @@ class DeliveryService
             throw new DeliveryException('Marque a saída para entrega primeiro.');
         }
 
+        if ($this->isPaid($session)) {
+            DB::transaction(function () use ($session) {
+                foreach ($this->billableOrders($session) as $order) {
+                    $order->update(['status' => OrderStatus::PAGO->value, 'paid_at' => now()]);
+                }
+                $session->update(['delivered_at' => now()]);
+                $session->markAsClosed();
+            });
+
+            return;
+        }
+
         $session->update(['delivered_at' => now()]);
         $session->forwardToCashier($session->payment_method_chosen ?? 'dinheiro');
     }
 
     /**
-     * Cancela a entrega (antes do pagamento).
+     * Cancela a entrega (antes do acerto). PIX já pago precisa ser estornado no
+     * Mercado Pago pelo restaurante — o painel avisa.
      *
      * @throws DeliveryException
      */
@@ -201,6 +286,7 @@ class DeliveryService
                     $order->forceCancel($reason);
                 }
             }
+            Payment::where('session_id', $session->id)->where('status', 'pending')->update(['status' => 'cancelled']);
             $session->markAsClosed();
         });
     }
@@ -224,8 +310,39 @@ class DeliveryService
         if ($session->accepted_at) {
             return 'em_preparo';
         }
+        if ($session->payment_method_chosen === 'pix' && !$this->isPaid($session)) {
+            return 'aguardando_pagamento';
+        }
 
         return 'aguardando';
+    }
+
+    /** Total da entrega: itens não cancelados + taxa. */
+    public function total(AppSession $session): float
+    {
+        $items = (float) $this->billableOrders($session)
+            ->load('items')
+            ->sum(fn ($o) => $o->items->sum(fn ($i) => $i->unit_price * $i->quantity));
+
+        return $items > 0 ? $items + (float) $session->delivery_fee : 0.0;
+    }
+
+    /** Pago por completo (PIX pelo app confirmado ou acerto no caixa)? */
+    public function isPaid(AppSession $session): bool
+    {
+        $paid = (float) Payment::where('session_id', $session->id)->where('status', 'paid')->sum('amount');
+
+        return $paid > 0 && $paid + 0.01 >= $this->total($session);
+    }
+
+    /** Cobrança PIX pendente (para o app reabrir a tela de pagamento). */
+    public function pendingPixPayment(AppSession $session): ?Payment
+    {
+        return Payment::where('session_id', $session->id)
+            ->where('method', 'pix')
+            ->where('status', 'pending')
+            ->latest()
+            ->first();
     }
 
     // ─── Helpers ────────────────────────────────────────────

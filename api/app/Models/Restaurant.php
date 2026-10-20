@@ -24,6 +24,7 @@ class Restaurant extends Model
         'mercadopago_access_token', 'mercadopago_webhook_secret', 'mercadopago_public_key',
         'is_active',
         'delivery_enabled', 'delivery_fee', 'delivery_min_order', 'delivery_eta_minutes', 'delivery_area_note',
+        'latitude', 'longitude', 'delivery_free_km', 'delivery_max_km',
     ];
 
     // Nunca serializados para JSON — credenciais são write-only via endpoint dedicado.
@@ -50,6 +51,10 @@ class Restaurant extends Model
         'delivery_fee'                 => 'decimal:2',
         'delivery_min_order'           => 'decimal:2',
         'delivery_eta_minutes'         => 'integer',
+        'latitude'                     => 'float',
+        'longitude'                    => 'float',
+        'delivery_free_km'             => 'float',
+        'delivery_max_km'              => 'float',
     ];
 
     public function users(): HasMany
@@ -91,7 +96,36 @@ class Restaurant extends Model
             'min_order'   => (float) $this->delivery_min_order,
             'eta_minutes' => $this->delivery_eta_minutes,
             'area_note'   => $this->delivery_area_note,
+            'zones'       => $this->deliveryZones(),
+            'pix_enabled' => $this->acceptsOnlinePix(),
         ];
+    }
+
+    /**
+     * Zonas por distância — null quando a loja não marcou a localização ou o
+     * raio máximo (aí vale a taxa fixa em qualquer endereço).
+     *
+     * @return array{lat: float, lng: float, free_km: float, max_km: float, fee: float}|null
+     */
+    public function deliveryZones(): ?array
+    {
+        if ($this->latitude === null || $this->longitude === null || !$this->delivery_max_km) {
+            return null;
+        }
+
+        return [
+            'lat'     => (float) $this->latitude,
+            'lng'     => (float) $this->longitude,
+            'free_km' => (float) ($this->delivery_free_km ?? 0),
+            'max_km'  => (float) $this->delivery_max_km,
+            'fee'     => (float) $this->delivery_fee,
+        ];
+    }
+
+    /** PIX pelo app depende só do Mercado Pago configurado no restaurante. */
+    public function acceptsOnlinePix(): bool
+    {
+        return !empty($this->mercadopago_access_token);
     }
 
     /**
